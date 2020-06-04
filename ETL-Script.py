@@ -26,22 +26,13 @@ session = glue_context.spark_session
 job = Job(glue_context)
 job.init(args['JOB_NAME'], args)
 
-#Inititalize S3 client for logs
-s3_client = boto3.resource('s3')
-log_bucket = "script-logs-etl"
-
-#read and write parameters
-s3_write_path = "s3://ip-metadata-bucket-demo"
-glue_database = "transactions-db"
-glue_table = "2020_05_28_16_08_00"
-
 #Reads data from GlueTable in GlueDatabase into a glue dynamic frame.
 #Converts the dynamic frame to a spark dataframe.
 #If reading fails program is terminated.
-def ReadData(GlueDatabase, GlueTable):
+def ReadData(GlueDatabase, GlueTable, log_bucket, read_log_object):
     
+    s3_client = boto3.resource('s3')
     read_logs = ""
-    read_log_object = "read_logs.txt"
     
     success = False
     try:
@@ -63,7 +54,10 @@ def ReadData(GlueDatabase, GlueTable):
     return dynamic_frame_read.toDF()
 
 #Transforms the schema of the dataframe
-def TransformData(data_frame):
+def TransformData(data_frame, log_bucket, transform_log_object):
+    
+    s3_client = boto3.resource('s3')
+    transform_logs = ""
     
     #returns schema of a main column in the form of a string
     def GetSchema(column_name, data_frame):
@@ -132,9 +126,6 @@ def TransformData(data_frame):
         for old_name, new_name in old_to_new_mapping.items():
                 data_frame = data_frame.withColumnRenamed(old_name, new_name)
         return data_frame
-        
-    transform_logs = ""
-    transform_log_object = "transform_logs.txt"
     
     #change workflowId schema
     start_time = time()        
@@ -188,10 +179,15 @@ def TransformData(data_frame):
     
 
 #Query the dataframe, and write results to S3
-def WriteData(data_frame):
+def WriteData(data_frame, null_columns, not_null_columns, s3_write_path, log_bucket, write_log_object):
     
     write_logs = ""
-    write_log_object = "write_logs.txt"
+    s3_client = boto3.resource('s3')
+    
+    #number of optional columns
+    n_columns = len(null_columns)
+    #total schemas possible
+    total_subsets = 2**n_columns
     
     #write dataframe to s3
     def WriteDataframe(data_frame):
@@ -216,6 +212,7 @@ def WriteData(data_frame):
     #query the dataframe
     def ProcessQuery(data_frame, query):
         nonlocal write_logs
+        write_logs += "--------Query--------\n" + query + "\n"
         #Create SQL View from dataframe
         data_frame.createOrReplaceTempView("table")
         #query the table
@@ -234,7 +231,8 @@ def WriteData(data_frame):
         WriteDataframe(table_df)
     
     #return a list of queries
-    def BuildQuery(columns, n_columns, total_subsets, select_clause_default):
+    def BuildQuery():
+        
         #helper function to get the binary notation of a decimal integer
         def ToBinary(num, length):
             ans = []
@@ -247,48 +245,70 @@ def WriteData(data_frame):
         
         condition = [" IS NOT NULL", " IS NULL"]
         queries = []
+        queries_compliment = []
+        
         for i in range(0, total_subsets):
+            
             #initialize the select clause and where clause of the query
-            select_clause = select_clause_default
+            select_clause = ", ".join(not_null_columns)
             where_clause = ""
             subset = ToBinary(i, n_columns)
             
             #build query
             for j in range(0, n_columns-1):
                 k = subset[j]
-                where_clause += '(' + columns[j] + condition[k] + ') AND '
+                where_clause += "(" + null_columns[j] + condition[k] + ") AND "
                 if k == 0:
-                    select_clause += ', ' + columns[j]
+                    select_clause += ", " + null_columns[j]
             k = subset[n_columns-1]
-            where_clause += "(" + columns[n_columns-1] + condition[k] + ")"
+            where_clause += "(" + null_columns[n_columns-1] + condition[k] + ")"
             if k == 0:
-                select_clause += ", " + columns[n_columns-1]
+                select_clause += ", " + null_columns[n_columns-1]
             
-            query = 'SELECT ' + select_clause + ' FROM table' + ' WHERE ' + where_clause
+            query = "SELECT " + select_clause + " FROM table WHERE " + where_clause
+            query_compliment = "SELECT * FROM table WHERE NOT " + "(" + where_clause + ")"
             
             #add query to list
             queries.append(query)
             
-        return queries
+            #queries_compliment
+            queries_compliment.append(query_compliment)
+            
+        return queries, queries_compliment
         
-    #optional columns
-    null_columns = ["index1", "index2", "index3", "index4", "updateMetadataApprovalMap"]
-    #mandatory columns
-    not_null_columns = ["RequestId", "UsecaseIdAndVersion", "Version", "LastUpdatedTime", "RequestState", "DocumentMetadataList", "WorkflowIdentifierMap"]
-    #number of optional columns
-    n_columns = len(null_columns)
-    #total schemas possible
-    total_subsets = 2**n_columns
+    def ReduceDataframe(data_frame, query):
+        nonlocal write_logs
+        
+        write_logs += "--------Query Compliment--------\n" + query + "\n"
+        
+        #Create SQL View from dataframe
+        data_frame.createOrReplaceTempView("table")
+        #query the table
+        try:
+            #get the result of query
+            table_df = session.sql(query)
+            write_logs += "Query Compliment Success\n"
+            return table_df
+        except Exception as e:
+            write_logs += "Query Compliment Failed\n: " + str(e) + "\n"
+        
+        return data_frame
+    
+    
     #get the list of queries
-    queries = BuildQuery(null_columns, n_columns, total_subsets, ", ".join(not_null_columns))
+    queries, queries_compliment = BuildQuery()
+    
     #query the dataframe and write tO S3
     for i in range(total_subsets):
-        write_logs += "===============" + str(i) + "=================\n" + "--------Query--------\n" + queries[i] + "\n"
+        write_logs += "===============================" + str(i) + "========================================\n"
         start_time = time()
         ProcessQuery(data_frame, queries[i])
+        data_frame = ReduceDataframe(data_frame, queries_compliment[i])
         end_time = time()
         write_logs += "Duration: " + str(end_time - start_time) + "\n"
-        
+        if bool(data_frame.head(1)) is False:
+            break
+    
     #log dataframe writes to S3
     s3_client.Object(log_bucket, write_log_object).put(Body = write_logs)
     
@@ -296,17 +316,29 @@ def WriteData(data_frame):
 ########
 #EXTRACT
 ########
-df = ReadData(glue_database, glue_table)
+log_bucket = "script-logs-etl"
+read_log_object = "read_logs.txt"
+glue_database = "transactions-db"
+glue_table = "2020_05_28_16_08_00"
+df = ReadData(glue_database, glue_table, log_bucket, read_log_object)
 
 ##########
 #TRANSFORM
 ##########
-df = TransformData(df)
-df.printSchema()
+log_bucket = "script-logs-etl"
+transform_log_object = "transform_logs.txt"
+df = TransformData(df, log_bucket, transform_log_object)
 
 #####
 #LOAD
 #####
-WriteData(df)
+
+s3_write_path = "s3://ip-metadata-bucket-demo"
+log_bucket = "script-logs-etl"
+write_log_object = "write_logs.txt"
+null_columns = ["index1", "index2", "index3", "index4", "updateMetadataApprovalMap"]
+not_null_columns = ["RequestId", "UsecaseIdAndVersion", "Version", "LastUpdatedTime", "RequestState", "DocumentMetadataList", "WorkflowIdentifierMap"]
+#write
+WriteData(df, null_columns, not_null_columns, s3_write_path, log_bucket, write_log_object)
 
 job.commit()
