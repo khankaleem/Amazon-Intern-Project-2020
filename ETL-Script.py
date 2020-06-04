@@ -198,13 +198,11 @@ def WriteData(data_frame, null_columns, not_null_columns, s3_write_path, log_buc
             write_logs += "Write Success\n"
             return
         
-        write_success = False
         try:
             #convert spark dataframe to glue dynamic frame
             dynamic_frame_write = DynamicFrame.fromDF(data_frame, glue_context, "dynamic_frame_write")
             #write the dynamic frame to s3 path
             datasink = glue_context.write_dynamic_frame.from_options(frame = dynamic_frame_write, connection_type = "s3", connection_options = {"path": s3_write_path}, format = "json", transformation_ctx = "datasink2")
-            write_success = True
             write_logs += "Write Success\n"
         except Exception as e:
             write_logs += "Write Failed\n: " + str(e) + "\n"
@@ -219,11 +217,9 @@ def WriteData(data_frame, null_columns, not_null_columns, s3_write_path, log_buc
         data_frame.createOrReplaceTempView("table")
         
         #query the table
-        query_success = False
         try:
             #get the result of query
             table_df = session.sql(query)
-            query_success = True
             write_logs += "Query Success\n"
             #write the dataframe
             WriteDataframe(table_df)
