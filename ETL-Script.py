@@ -91,18 +91,7 @@ def TransformData(data_frame, log_bucket, transform_log_object):
     
     #concatenate useCaseId and version
     def Concatenate_useCaseId_version(data_frame):
-        
-        #user defined function
-        def Helper_Concatenate(row1, row2):
-            dict1 = row1.asDict(True)
-            dict2 = row2.asDict(True)
-            return {"s":dict1["s"] + ":" + dict2["n"]}
-        
-        #concatenate
-        Concatenate = f.udf(Helper_Concatenate, 'struct<s:string>')
-        data_frame = data_frame.withColumn("useCaseId", Concatenate("useCaseId", "version"))
-        
-        #return changed dataframe
+        data_frame = data_frame.withColumn("useCaseId", f.struct(f.concat(f.col("useCaseId.s"), f.lit(":"), f.col("version.n")).alias("s")))
         return data_frame
     
     #change nested field names of a main column
