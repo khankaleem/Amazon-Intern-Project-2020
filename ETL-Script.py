@@ -1,6 +1,3 @@
-#########################################
-### IMPORT LIBRARIES AND SET VARIABLES
-#########################################
 #Import python modules
 import sys
 import boto3
@@ -67,26 +64,7 @@ def TransformData(data_frame, log_bucket, transform_log_object):
         
     #Changes workflowId schema
     def ChangeWorkflowIdSchema(data_frame):
-        
-        #user defined function for change of schema for workflowId
-        def Helper_ChangeWorkflowSchema(row):
-            #null check
-            if row is None:
-                return None
-            #change schema
-            data = row.asDict(True)
-            return {"m":{"generateInvoiceGraph":data}}
-        
-        #get old schema of workflowId
-        workflow_schema_old = GetSchema("workflowId", data_frame)
-        #new schema of workflowId
-        workflow_schema_new = "struct<m:struct<generateInvoiceGraph:" + workflow_schema_old + ">>"
-        
-        #change workflowId schema
-        ChangeWorkflowSchema = f.udf(Helper_ChangeWorkflowSchema, workflow_schema_new)
-        data_frame = data_frame.withColumn("workflowId", ChangeWorkflowSchema("workflowId"))
-        
-        #return changed dataframe
+        data_frame = data_frame.withColumn("workflowId", f.when(f.col("workflowId").isNotNull(), f.struct(f.struct(f.struct(f.col("workflowId.m")).alias("generateInvoiceGraph")).alias("m"))).otherwise(f.lit(None)))
         return data_frame
     
     #concatenate useCaseId and version
