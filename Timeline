@@ -1,0 +1,192 @@
+week-2
+
+Read about AWS technologies like S3, DynamoDB, Glue and Data-pipeline, IAM roles and users.
+Create an IAM user in the root AWS account provided to me and assigned administrative privileges to it. 
+Created a DynamoDB table and uploaded the dummy transactions data into the table. 
+Set up a Data-pipeline and exported the items from DynamoDb table to S3. 
+Set up an AWS crawler to populate the data catalog in AWS Glue with objects in S3. 
+
+
+I lost 3 days of the week(Tuesday, Thursday, and Friday) because the internet connections 
+were suspended in Srinagar.  
+
+
+week-3
+
+-Was provided with data of 100 entries in a csv file.
+-Wrote an AWS Lambda function to read the csv from s3 bucket and transffered to DynamoDB.
+-Set up a pipeline to import data.
+-Set up a crawler to crawl the data into glue data catalog.
+
+-ETL scripting:language used python 3 and type spark 2.4
+
+-studied about pyspark
+and how python uses the framework for big data handling.
+studied about spark dataframes and the advantages in computation they provide.
+
+-Changing names of main columns came easy, a readymade function.
+-Changing names of nested columns, we need to build the new schema and cast the old schema to new one.
+-Firstly thought about hardcoding the schema. Took a lot of time and the process was mistake prone.
+-Then googled and searched a bit about inbuilt functions to get the schema of the column.
+-Obtained the schema in the form of string.
+-Made necessary name changes, and cast the old schema into new schema.
+-Error thrown null type not supported, googled but not able to find.
+-pondered the whole day, suddenly an idea flashed that null cannot be cast to null, null can be casted
+to any other data type, finally solved the problem by replacing null to string in the new schema.
+-transformed the schema names, set up the pipeline and transported the data from s3 to dynamodb. 
+
+-concatenating version and usecaseid, wrote a udf in spark. udf supports parralel processing.
+
+-changing schema of workflowId: wrote udf functions in spark. 
+Corner case regarding null check was needed.
+
+-After changing the names and concatenating, changing schema, set up a datapipeline and transported
+to dynamodb. The results were consistent.
+
+
+-Provided with data of 15 more entries. This time data contained indexes and updateDataApprovalMap
+-Did the same tranformations above, but pipeline failed.
+-checked and removed the entries with indexes, pipeline works fine.
+-realised that because not all items define indexes so their values were set to null, 
+so datapipe does not pick null valued main columns.
+-realized further that datapipeline skips null values inside nested columns.
+-So only null valued main columns need to addressed.
+-Now had to design a method to skip past null valued main columns.
+
+
+Data is read from s3 by glue in the form of a spark dataframe. 
+Spark dataframe can be visualized similar to an sql table. 
+It is distributed and all operations on it are parallelized. 
+Now for some main columns which are not defined by the items a default value null 
+is placed in the dataframe. 
+For e.g index1 is an optional field, not all items define it and hence for those items null 
+value will be assigned to it.
+So we can assign some other default values to null valued columnsl like empty strings 
+In this case we will be compromising on the integrity of data.
+Another solution is to iterate over every row, 
+drop null fields and write to s3. This solution is inefficient as to iterate over rows, 
+an entire partition of the dataframe is loaded to memory. 
+Also the rows will be processed serially. This approach defeats the purpose of using a dataframe. 
+
+So finally thought of the approach below after struggling for 2 days:
+Say we have three columns x, y and z . Also assume these columns can take null values. 
+So there will be 8 possible schemas which can be extracted from these columns. 
+Following are the schemas(0 means NULL and 1 means NOT NULL): 
+0 0 0  (all fields are NULL)
+0 0 1 (only z is NOT NULL)
+0 1 0 (only y is NOT NULL)
+0 1 1 (only x is NULL)
+1 0 0 (only x is NOT NULL)
+1 0 1 (only y is NULL)
+1 1 0 (only z is NULL)
+1 1 1 (all fields are NOT NULL)
+
+To extract every row which follows a certain schema, we need to write an sql query.
+The result of an sql query is a dataframe. 
+Finally we write this dataframe to s3 and hence we get rid of the main columns having null values.
+For e.g to extract all rows where x is not null, y is not null and z is null, 
+the following sql query is written:
+SELECT x, y FROM table
+ Where
+ (x IS NOT NULL) AND (y IS NOT NULL) AND (z IS NULL)
+
+So we write these 8 queries to extract all possible schemas, and write to s3.
+So if there are n optional columns, then 2 ^ n sql queries need to be written. So the complexity of 
+the solution depends on the number of optional fields.
+
+Wrote a function which generates these queries. Queried the dataframe and extracted the schema and
+wrote to s3.
+
+
+
+
+-Week 4
+
+Coded the etl script.
+Broke the code into functions.
+Thought about the problem as a user accesing the functions and hence was able to
+build a better structure.
+Built the abstraction over the script logic for easy access.
+
+So finally the user only needs to specify the parameters and call 3 functions for reading, tranforming 
+and writing of data.
+
+
+null columns, not null columns, logging buckets and objects, glue database and 
+glue table need to be specified.
+
+Did Exception handling for read failure, write failure, query failure.
+Coded timeline logging for schema conversion, reading and writing.
+
+So finally the code has 3 functions for Reading, Transforming and Writing. 
+
+Though about how to optimize the query and transformation process.
+
+=> Reduce the size of the dataframe
+By Querying on the same dataframe I was doing extra work. Need to eliminated this extra work.
+So we query the dataframe, then write this dataframe to s3. Now we build a second query which gives all
+the rows which were not selected by the first query. This is achieved by setting up the
+condition of the second query as compliment of the first query.
+
+For e.g:
+first query:  select x, y from table where (x is NOT NULL) and (y is Not NULL) and (z is NULL)
+second query: select * from table where NOT ((x is NOT NULL) and (y is Not NULL) and (z is NULL))
+ 
+This manner we eliminate the rows selected in the first query and hence the size of the table decreases.
+Say there is 1 TB of data in the datafame. and there are 1000 subsets. On an average each subset
+occupies 1GB of data. So after every query we will decrease the size of the table by 1 GB.
+For a large dataset this is an optimized approach.
+
+=>Eliminate spark udf(user defined functions)
+udf come at a cost. Although they run in parralel, they suffer from overhead of function calls, and can
+act as a black box for spark optimization.
+udf were written to change workflowid schema and concatenate usecaseid and version.
+So instead used inbuilt functions of spark to do the above computation.
+select x, y from table where (x is NOT NULL) and (y is Not NULL) and (z is NULL)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
