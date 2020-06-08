@@ -18,7 +18,7 @@ week-3
 -Set up a pipeline to import data.
 -Set up a crawler to crawl the data into glue data catalog.
 
--ETL scripting:language used python 3 and type spark 2.4
+-ETL scripting:language used python 3, type spark 2.4
 
 -studied about pyspark
 and how python uses the framework for big data handling.
@@ -142,51 +142,3 @@ udf come at a cost. Although they run in parralel, they suffer from overhead of 
 act as a black box for spark optimization.
 udf were written to change workflowid schema and concatenate usecaseid and version.
 So instead used inbuilt functions of spark to do the above computation.
-select x, y from table where (x is NOT NULL) and (y is Not NULL) and (z is NULL)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
