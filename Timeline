@@ -48,9 +48,9 @@ to dynamodb. The results were consistent.
 -Did the same tranformations above, but pipeline failed.
 -checked and removed the entries with indexes, pipeline works fine.
 -realised that because not all items define indexes so their values were set to null, 
-so datapipe does not pick null valued main columns.
+so datapipelinee does not pick null valued main columns.
 -realized further that datapipeline skips null values inside nested columns.
--So only null valued main columns need to addressed.
+-So only null valued main columns need to be addressed.
 -Now had to design a method to skip past null valued main columns.
 
 
