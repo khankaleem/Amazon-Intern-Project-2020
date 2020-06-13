@@ -1,288 +1,288 @@
 ===============================0========================================
 --------Query--------
-SELECT RequestId, UsecaseIdAndVersion, Version, LastUpdatedTime, RequestState, DocumentMetadataList, WorkflowIdentifierMap, index1, index2, index3, index4, updateMetadataApprovalMap FROM table WHERE (index1 IS NOT NULL) AND (index2 IS NOT NULL) AND (index3 IS NOT NULL) AND (index4 IS NOT NULL) AND (updateMetadataApprovalMap IS NOT NULL)
+SELECT LastUpdatedTime, RequestId, UsecaseIdAndVersion, RequestState, Version, DocumentMetadataList, WorkflowIdentifierMap, index1, index3, index2, updateMetadataApprovalMap, index4 FROM table WHERE (index1 IS NOT NULL) AND (index3 IS NOT NULL) AND (index2 IS NOT NULL) AND (updateMetadataApprovalMap IS NOT NULL) AND (index4 IS NOT NULL)
 Query Success
 Write Success
 --------Query Compliment--------
-SELECT * FROM table WHERE NOT ((index1 IS NOT NULL) AND (index2 IS NOT NULL) AND (index3 IS NOT NULL) AND (index4 IS NOT NULL) AND (updateMetadataApprovalMap IS NOT NULL))
+SELECT * FROM table WHERE NOT ((index1 IS NOT NULL) AND (index3 IS NOT NULL) AND (index2 IS NOT NULL) AND (updateMetadataApprovalMap IS NOT NULL) AND (index4 IS NOT NULL))
 Query Compliment Success
-Duration: 3.5142087936401367
+Duration: 0.5197694301605225
 ===============================1========================================
 --------Query--------
-SELECT RequestId, UsecaseIdAndVersion, Version, LastUpdatedTime, RequestState, DocumentMetadataList, WorkflowIdentifierMap, index2, index3, index4, updateMetadataApprovalMap FROM table WHERE (index1 IS NULL) AND (index2 IS NOT NULL) AND (index3 IS NOT NULL) AND (index4 IS NOT NULL) AND (updateMetadataApprovalMap IS NOT NULL)
+SELECT LastUpdatedTime, RequestId, UsecaseIdAndVersion, RequestState, Version, DocumentMetadataList, WorkflowIdentifierMap, index3, index2, updateMetadataApprovalMap, index4 FROM table WHERE (index1 IS NULL) AND (index3 IS NOT NULL) AND (index2 IS NOT NULL) AND (updateMetadataApprovalMap IS NOT NULL) AND (index4 IS NOT NULL)
 Query Success
 Write Success
 --------Query Compliment--------
-SELECT * FROM table WHERE NOT ((index1 IS NULL) AND (index2 IS NOT NULL) AND (index3 IS NOT NULL) AND (index4 IS NOT NULL) AND (updateMetadataApprovalMap IS NOT NULL))
+SELECT * FROM table WHERE NOT ((index1 IS NULL) AND (index3 IS NOT NULL) AND (index2 IS NOT NULL) AND (updateMetadataApprovalMap IS NOT NULL) AND (index4 IS NOT NULL))
 Query Compliment Success
-Duration: 0.9241940975189209
+Duration: 0.46842169761657715
 ===============================2========================================
 --------Query--------
-SELECT RequestId, UsecaseIdAndVersion, Version, LastUpdatedTime, RequestState, DocumentMetadataList, WorkflowIdentifierMap, index1, index3, index4, updateMetadataApprovalMap FROM table WHERE (index1 IS NOT NULL) AND (index2 IS NULL) AND (index3 IS NOT NULL) AND (index4 IS NOT NULL) AND (updateMetadataApprovalMap IS NOT NULL)
+SELECT LastUpdatedTime, RequestId, UsecaseIdAndVersion, RequestState, Version, DocumentMetadataList, WorkflowIdentifierMap, index1, index2, updateMetadataApprovalMap, index4 FROM table WHERE (index1 IS NOT NULL) AND (index3 IS NULL) AND (index2 IS NOT NULL) AND (updateMetadataApprovalMap IS NOT NULL) AND (index4 IS NOT NULL)
 Query Success
 Write Success
 --------Query Compliment--------
-SELECT * FROM table WHERE NOT ((index1 IS NOT NULL) AND (index2 IS NULL) AND (index3 IS NOT NULL) AND (index4 IS NOT NULL) AND (updateMetadataApprovalMap IS NOT NULL))
+SELECT * FROM table WHERE NOT ((index1 IS NOT NULL) AND (index3 IS NULL) AND (index2 IS NOT NULL) AND (updateMetadataApprovalMap IS NOT NULL) AND (index4 IS NOT NULL))
 Query Compliment Success
-Duration: 0.6025238037109375
+Duration: 0.4863119125366211
 ===============================3========================================
 --------Query--------
-SELECT RequestId, UsecaseIdAndVersion, Version, LastUpdatedTime, RequestState, DocumentMetadataList, WorkflowIdentifierMap, index3, index4, updateMetadataApprovalMap FROM table WHERE (index1 IS NULL) AND (index2 IS NULL) AND (index3 IS NOT NULL) AND (index4 IS NOT NULL) AND (updateMetadataApprovalMap IS NOT NULL)
+SELECT LastUpdatedTime, RequestId, UsecaseIdAndVersion, RequestState, Version, DocumentMetadataList, WorkflowIdentifierMap, index2, updateMetadataApprovalMap, index4 FROM table WHERE (index1 IS NULL) AND (index3 IS NULL) AND (index2 IS NOT NULL) AND (updateMetadataApprovalMap IS NOT NULL) AND (index4 IS NOT NULL)
 Query Success
 Write Success
 --------Query Compliment--------
-SELECT * FROM table WHERE NOT ((index1 IS NULL) AND (index2 IS NULL) AND (index3 IS NOT NULL) AND (index4 IS NOT NULL) AND (updateMetadataApprovalMap IS NOT NULL))
+SELECT * FROM table WHERE NOT ((index1 IS NULL) AND (index3 IS NULL) AND (index2 IS NOT NULL) AND (updateMetadataApprovalMap IS NOT NULL) AND (index4 IS NOT NULL))
 Query Compliment Success
-Duration: 0.759697675704956
+Duration: 0.4421546459197998
 ===============================4========================================
 --------Query--------
-SELECT RequestId, UsecaseIdAndVersion, Version, LastUpdatedTime, RequestState, DocumentMetadataList, WorkflowIdentifierMap, index1, index2, index4, updateMetadataApprovalMap FROM table WHERE (index1 IS NOT NULL) AND (index2 IS NOT NULL) AND (index3 IS NULL) AND (index4 IS NOT NULL) AND (updateMetadataApprovalMap IS NOT NULL)
+SELECT LastUpdatedTime, RequestId, UsecaseIdAndVersion, RequestState, Version, DocumentMetadataList, WorkflowIdentifierMap, index1, index3, updateMetadataApprovalMap, index4 FROM table WHERE (index1 IS NOT NULL) AND (index3 IS NOT NULL) AND (index2 IS NULL) AND (updateMetadataApprovalMap IS NOT NULL) AND (index4 IS NOT NULL)
 Query Success
 Write Success
 --------Query Compliment--------
-SELECT * FROM table WHERE NOT ((index1 IS NOT NULL) AND (index2 IS NOT NULL) AND (index3 IS NULL) AND (index4 IS NOT NULL) AND (updateMetadataApprovalMap IS NOT NULL))
+SELECT * FROM table WHERE NOT ((index1 IS NOT NULL) AND (index3 IS NOT NULL) AND (index2 IS NULL) AND (updateMetadataApprovalMap IS NOT NULL) AND (index4 IS NOT NULL))
 Query Compliment Success
-Duration: 0.5082697868347168
+Duration: 0.37583017349243164
 ===============================5========================================
 --------Query--------
-SELECT RequestId, UsecaseIdAndVersion, Version, LastUpdatedTime, RequestState, DocumentMetadataList, WorkflowIdentifierMap, index2, index4, updateMetadataApprovalMap FROM table WHERE (index1 IS NULL) AND (index2 IS NOT NULL) AND (index3 IS NULL) AND (index4 IS NOT NULL) AND (updateMetadataApprovalMap IS NOT NULL)
+SELECT LastUpdatedTime, RequestId, UsecaseIdAndVersion, RequestState, Version, DocumentMetadataList, WorkflowIdentifierMap, index3, updateMetadataApprovalMap, index4 FROM table WHERE (index1 IS NULL) AND (index3 IS NOT NULL) AND (index2 IS NULL) AND (updateMetadataApprovalMap IS NOT NULL) AND (index4 IS NOT NULL)
 Query Success
 Write Success
 --------Query Compliment--------
-SELECT * FROM table WHERE NOT ((index1 IS NULL) AND (index2 IS NOT NULL) AND (index3 IS NULL) AND (index4 IS NOT NULL) AND (updateMetadataApprovalMap IS NOT NULL))
+SELECT * FROM table WHERE NOT ((index1 IS NULL) AND (index3 IS NOT NULL) AND (index2 IS NULL) AND (updateMetadataApprovalMap IS NOT NULL) AND (index4 IS NOT NULL))
 Query Compliment Success
-Duration: 0.467789888381958
+Duration: 0.41731691360473633
 ===============================6========================================
 --------Query--------
-SELECT RequestId, UsecaseIdAndVersion, Version, LastUpdatedTime, RequestState, DocumentMetadataList, WorkflowIdentifierMap, index1, index4, updateMetadataApprovalMap FROM table WHERE (index1 IS NOT NULL) AND (index2 IS NULL) AND (index3 IS NULL) AND (index4 IS NOT NULL) AND (updateMetadataApprovalMap IS NOT NULL)
+SELECT LastUpdatedTime, RequestId, UsecaseIdAndVersion, RequestState, Version, DocumentMetadataList, WorkflowIdentifierMap, index1, updateMetadataApprovalMap, index4 FROM table WHERE (index1 IS NOT NULL) AND (index3 IS NULL) AND (index2 IS NULL) AND (updateMetadataApprovalMap IS NOT NULL) AND (index4 IS NOT NULL)
 Query Success
 Write Success
 --------Query Compliment--------
-SELECT * FROM table WHERE NOT ((index1 IS NOT NULL) AND (index2 IS NULL) AND (index3 IS NULL) AND (index4 IS NOT NULL) AND (updateMetadataApprovalMap IS NOT NULL))
+SELECT * FROM table WHERE NOT ((index1 IS NOT NULL) AND (index3 IS NULL) AND (index2 IS NULL) AND (updateMetadataApprovalMap IS NOT NULL) AND (index4 IS NOT NULL))
 Query Compliment Success
-Duration: 3.040670156478882
+Duration: 2.9628689289093018
 ===============================7========================================
 --------Query--------
-SELECT RequestId, UsecaseIdAndVersion, Version, LastUpdatedTime, RequestState, DocumentMetadataList, WorkflowIdentifierMap, index4, updateMetadataApprovalMap FROM table WHERE (index1 IS NULL) AND (index2 IS NULL) AND (index3 IS NULL) AND (index4 IS NOT NULL) AND (updateMetadataApprovalMap IS NOT NULL)
+SELECT LastUpdatedTime, RequestId, UsecaseIdAndVersion, RequestState, Version, DocumentMetadataList, WorkflowIdentifierMap, updateMetadataApprovalMap, index4 FROM table WHERE (index1 IS NULL) AND (index3 IS NULL) AND (index2 IS NULL) AND (updateMetadataApprovalMap IS NOT NULL) AND (index4 IS NOT NULL)
 Query Success
 Write Success
 --------Query Compliment--------
-SELECT * FROM table WHERE NOT ((index1 IS NULL) AND (index2 IS NULL) AND (index3 IS NULL) AND (index4 IS NOT NULL) AND (updateMetadataApprovalMap IS NOT NULL))
+SELECT * FROM table WHERE NOT ((index1 IS NULL) AND (index3 IS NULL) AND (index2 IS NULL) AND (updateMetadataApprovalMap IS NOT NULL) AND (index4 IS NOT NULL))
 Query Compliment Success
-Duration: 0.5963823795318604
+Duration: 0.3928563594818115
 ===============================8========================================
 --------Query--------
-SELECT RequestId, UsecaseIdAndVersion, Version, LastUpdatedTime, RequestState, DocumentMetadataList, WorkflowIdentifierMap, index1, index2, index3, updateMetadataApprovalMap FROM table WHERE (index1 IS NOT NULL) AND (index2 IS NOT NULL) AND (index3 IS NOT NULL) AND (index4 IS NULL) AND (updateMetadataApprovalMap IS NOT NULL)
+SELECT LastUpdatedTime, RequestId, UsecaseIdAndVersion, RequestState, Version, DocumentMetadataList, WorkflowIdentifierMap, index1, index3, index2, index4 FROM table WHERE (index1 IS NOT NULL) AND (index3 IS NOT NULL) AND (index2 IS NOT NULL) AND (updateMetadataApprovalMap IS NULL) AND (index4 IS NOT NULL)
 Query Success
 Write Success
 --------Query Compliment--------
-SELECT * FROM table WHERE NOT ((index1 IS NOT NULL) AND (index2 IS NOT NULL) AND (index3 IS NOT NULL) AND (index4 IS NULL) AND (updateMetadataApprovalMap IS NOT NULL))
+SELECT * FROM table WHERE NOT ((index1 IS NOT NULL) AND (index3 IS NOT NULL) AND (index2 IS NOT NULL) AND (updateMetadataApprovalMap IS NULL) AND (index4 IS NOT NULL))
 Query Compliment Success
-Duration: 0.424436092376709
+Duration: 0.38543152809143066
 ===============================9========================================
 --------Query--------
-SELECT RequestId, UsecaseIdAndVersion, Version, LastUpdatedTime, RequestState, DocumentMetadataList, WorkflowIdentifierMap, index2, index3, updateMetadataApprovalMap FROM table WHERE (index1 IS NULL) AND (index2 IS NOT NULL) AND (index3 IS NOT NULL) AND (index4 IS NULL) AND (updateMetadataApprovalMap IS NOT NULL)
+SELECT LastUpdatedTime, RequestId, UsecaseIdAndVersion, RequestState, Version, DocumentMetadataList, WorkflowIdentifierMap, index3, index2, index4 FROM table WHERE (index1 IS NULL) AND (index3 IS NOT NULL) AND (index2 IS NOT NULL) AND (updateMetadataApprovalMap IS NULL) AND (index4 IS NOT NULL)
 Query Success
 Write Success
 --------Query Compliment--------
-SELECT * FROM table WHERE NOT ((index1 IS NULL) AND (index2 IS NOT NULL) AND (index3 IS NOT NULL) AND (index4 IS NULL) AND (updateMetadataApprovalMap IS NOT NULL))
+SELECT * FROM table WHERE NOT ((index1 IS NULL) AND (index3 IS NOT NULL) AND (index2 IS NOT NULL) AND (updateMetadataApprovalMap IS NULL) AND (index4 IS NOT NULL))
 Query Compliment Success
-Duration: 0.4445676803588867
+Duration: 0.4407327175140381
 ===============================10========================================
 --------Query--------
-SELECT RequestId, UsecaseIdAndVersion, Version, LastUpdatedTime, RequestState, DocumentMetadataList, WorkflowIdentifierMap, index1, index3, updateMetadataApprovalMap FROM table WHERE (index1 IS NOT NULL) AND (index2 IS NULL) AND (index3 IS NOT NULL) AND (index4 IS NULL) AND (updateMetadataApprovalMap IS NOT NULL)
+SELECT LastUpdatedTime, RequestId, UsecaseIdAndVersion, RequestState, Version, DocumentMetadataList, WorkflowIdentifierMap, index1, index2, index4 FROM table WHERE (index1 IS NOT NULL) AND (index3 IS NULL) AND (index2 IS NOT NULL) AND (updateMetadataApprovalMap IS NULL) AND (index4 IS NOT NULL)
 Query Success
 Write Success
 --------Query Compliment--------
-SELECT * FROM table WHERE NOT ((index1 IS NOT NULL) AND (index2 IS NULL) AND (index3 IS NOT NULL) AND (index4 IS NULL) AND (updateMetadataApprovalMap IS NOT NULL))
+SELECT * FROM table WHERE NOT ((index1 IS NOT NULL) AND (index3 IS NULL) AND (index2 IS NOT NULL) AND (updateMetadataApprovalMap IS NULL) AND (index4 IS NOT NULL))
 Query Compliment Success
-Duration: 0.427994966506958
+Duration: 0.4336235523223877
 ===============================11========================================
 --------Query--------
-SELECT RequestId, UsecaseIdAndVersion, Version, LastUpdatedTime, RequestState, DocumentMetadataList, WorkflowIdentifierMap, index3, updateMetadataApprovalMap FROM table WHERE (index1 IS NULL) AND (index2 IS NULL) AND (index3 IS NOT NULL) AND (index4 IS NULL) AND (updateMetadataApprovalMap IS NOT NULL)
+SELECT LastUpdatedTime, RequestId, UsecaseIdAndVersion, RequestState, Version, DocumentMetadataList, WorkflowIdentifierMap, index2, index4 FROM table WHERE (index1 IS NULL) AND (index3 IS NULL) AND (index2 IS NOT NULL) AND (updateMetadataApprovalMap IS NULL) AND (index4 IS NOT NULL)
 Query Success
 Write Success
 --------Query Compliment--------
-SELECT * FROM table WHERE NOT ((index1 IS NULL) AND (index2 IS NULL) AND (index3 IS NOT NULL) AND (index4 IS NULL) AND (updateMetadataApprovalMap IS NOT NULL))
+SELECT * FROM table WHERE NOT ((index1 IS NULL) AND (index3 IS NULL) AND (index2 IS NOT NULL) AND (updateMetadataApprovalMap IS NULL) AND (index4 IS NOT NULL))
 Query Compliment Success
-Duration: 0.414994478225708
+Duration: 0.37051963806152344
 ===============================12========================================
 --------Query--------
-SELECT RequestId, UsecaseIdAndVersion, Version, LastUpdatedTime, RequestState, DocumentMetadataList, WorkflowIdentifierMap, index1, index2, updateMetadataApprovalMap FROM table WHERE (index1 IS NOT NULL) AND (index2 IS NOT NULL) AND (index3 IS NULL) AND (index4 IS NULL) AND (updateMetadataApprovalMap IS NOT NULL)
+SELECT LastUpdatedTime, RequestId, UsecaseIdAndVersion, RequestState, Version, DocumentMetadataList, WorkflowIdentifierMap, index1, index3, index4 FROM table WHERE (index1 IS NOT NULL) AND (index3 IS NOT NULL) AND (index2 IS NULL) AND (updateMetadataApprovalMap IS NULL) AND (index4 IS NOT NULL)
 Query Success
 Write Success
 --------Query Compliment--------
-SELECT * FROM table WHERE NOT ((index1 IS NOT NULL) AND (index2 IS NOT NULL) AND (index3 IS NULL) AND (index4 IS NULL) AND (updateMetadataApprovalMap IS NOT NULL))
+SELECT * FROM table WHERE NOT ((index1 IS NOT NULL) AND (index3 IS NOT NULL) AND (index2 IS NULL) AND (updateMetadataApprovalMap IS NULL) AND (index4 IS NOT NULL))
 Query Compliment Success
-Duration: 0.5722007751464844
+Duration: 0.41539931297302246
 ===============================13========================================
 --------Query--------
-SELECT RequestId, UsecaseIdAndVersion, Version, LastUpdatedTime, RequestState, DocumentMetadataList, WorkflowIdentifierMap, index2, updateMetadataApprovalMap FROM table WHERE (index1 IS NULL) AND (index2 IS NOT NULL) AND (index3 IS NULL) AND (index4 IS NULL) AND (updateMetadataApprovalMap IS NOT NULL)
+SELECT LastUpdatedTime, RequestId, UsecaseIdAndVersion, RequestState, Version, DocumentMetadataList, WorkflowIdentifierMap, index3, index4 FROM table WHERE (index1 IS NULL) AND (index3 IS NOT NULL) AND (index2 IS NULL) AND (updateMetadataApprovalMap IS NULL) AND (index4 IS NOT NULL)
 Query Success
 Write Success
 --------Query Compliment--------
-SELECT * FROM table WHERE NOT ((index1 IS NULL) AND (index2 IS NOT NULL) AND (index3 IS NULL) AND (index4 IS NULL) AND (updateMetadataApprovalMap IS NOT NULL))
+SELECT * FROM table WHERE NOT ((index1 IS NULL) AND (index3 IS NOT NULL) AND (index2 IS NULL) AND (updateMetadataApprovalMap IS NULL) AND (index4 IS NOT NULL))
 Query Compliment Success
-Duration: 0.4328150749206543
+Duration: 0.4229004383087158
 ===============================14========================================
 --------Query--------
-SELECT RequestId, UsecaseIdAndVersion, Version, LastUpdatedTime, RequestState, DocumentMetadataList, WorkflowIdentifierMap, index1, updateMetadataApprovalMap FROM table WHERE (index1 IS NOT NULL) AND (index2 IS NULL) AND (index3 IS NULL) AND (index4 IS NULL) AND (updateMetadataApprovalMap IS NOT NULL)
+SELECT LastUpdatedTime, RequestId, UsecaseIdAndVersion, RequestState, Version, DocumentMetadataList, WorkflowIdentifierMap, index1, index4 FROM table WHERE (index1 IS NOT NULL) AND (index3 IS NULL) AND (index2 IS NULL) AND (updateMetadataApprovalMap IS NULL) AND (index4 IS NOT NULL)
 Query Success
 Write Success
 --------Query Compliment--------
-SELECT * FROM table WHERE NOT ((index1 IS NOT NULL) AND (index2 IS NULL) AND (index3 IS NULL) AND (index4 IS NULL) AND (updateMetadataApprovalMap IS NOT NULL))
+SELECT * FROM table WHERE NOT ((index1 IS NOT NULL) AND (index3 IS NULL) AND (index2 IS NULL) AND (updateMetadataApprovalMap IS NULL) AND (index4 IS NOT NULL))
 Query Compliment Success
-Duration: 0.48605847358703613
+Duration: 0.409808874130249
 ===============================15========================================
 --------Query--------
-SELECT RequestId, UsecaseIdAndVersion, Version, LastUpdatedTime, RequestState, DocumentMetadataList, WorkflowIdentifierMap, updateMetadataApprovalMap FROM table WHERE (index1 IS NULL) AND (index2 IS NULL) AND (index3 IS NULL) AND (index4 IS NULL) AND (updateMetadataApprovalMap IS NOT NULL)
+SELECT LastUpdatedTime, RequestId, UsecaseIdAndVersion, RequestState, Version, DocumentMetadataList, WorkflowIdentifierMap, index4 FROM table WHERE (index1 IS NULL) AND (index3 IS NULL) AND (index2 IS NULL) AND (updateMetadataApprovalMap IS NULL) AND (index4 IS NOT NULL)
 Query Success
 Write Success
 --------Query Compliment--------
-SELECT * FROM table WHERE NOT ((index1 IS NULL) AND (index2 IS NULL) AND (index3 IS NULL) AND (index4 IS NULL) AND (updateMetadataApprovalMap IS NOT NULL))
+SELECT * FROM table WHERE NOT ((index1 IS NULL) AND (index3 IS NULL) AND (index2 IS NULL) AND (updateMetadataApprovalMap IS NULL) AND (index4 IS NOT NULL))
 Query Compliment Success
-Duration: 0.6589748859405518
+Duration: 1.155806541442871
 ===============================16========================================
 --------Query--------
-SELECT RequestId, UsecaseIdAndVersion, Version, LastUpdatedTime, RequestState, DocumentMetadataList, WorkflowIdentifierMap, index1, index2, index3, index4 FROM table WHERE (index1 IS NOT NULL) AND (index2 IS NOT NULL) AND (index3 IS NOT NULL) AND (index4 IS NOT NULL) AND (updateMetadataApprovalMap IS NULL)
+SELECT LastUpdatedTime, RequestId, UsecaseIdAndVersion, RequestState, Version, DocumentMetadataList, WorkflowIdentifierMap, index1, index3, index2, updateMetadataApprovalMap FROM table WHERE (index1 IS NOT NULL) AND (index3 IS NOT NULL) AND (index2 IS NOT NULL) AND (updateMetadataApprovalMap IS NOT NULL) AND (index4 IS NULL)
 Query Success
 Write Success
 --------Query Compliment--------
-SELECT * FROM table WHERE NOT ((index1 IS NOT NULL) AND (index2 IS NOT NULL) AND (index3 IS NOT NULL) AND (index4 IS NOT NULL) AND (updateMetadataApprovalMap IS NULL))
+SELECT * FROM table WHERE NOT ((index1 IS NOT NULL) AND (index3 IS NOT NULL) AND (index2 IS NOT NULL) AND (updateMetadataApprovalMap IS NOT NULL) AND (index4 IS NULL))
 Query Compliment Success
-Duration: 0.6088368892669678
+Duration: 0.5138363838195801
 ===============================17========================================
 --------Query--------
-SELECT RequestId, UsecaseIdAndVersion, Version, LastUpdatedTime, RequestState, DocumentMetadataList, WorkflowIdentifierMap, index2, index3, index4 FROM table WHERE (index1 IS NULL) AND (index2 IS NOT NULL) AND (index3 IS NOT NULL) AND (index4 IS NOT NULL) AND (updateMetadataApprovalMap IS NULL)
+SELECT LastUpdatedTime, RequestId, UsecaseIdAndVersion, RequestState, Version, DocumentMetadataList, WorkflowIdentifierMap, index3, index2, updateMetadataApprovalMap FROM table WHERE (index1 IS NULL) AND (index3 IS NOT NULL) AND (index2 IS NOT NULL) AND (updateMetadataApprovalMap IS NOT NULL) AND (index4 IS NULL)
 Query Success
 Write Success
 --------Query Compliment--------
-SELECT * FROM table WHERE NOT ((index1 IS NULL) AND (index2 IS NOT NULL) AND (index3 IS NOT NULL) AND (index4 IS NOT NULL) AND (updateMetadataApprovalMap IS NULL))
+SELECT * FROM table WHERE NOT ((index1 IS NULL) AND (index3 IS NOT NULL) AND (index2 IS NOT NULL) AND (updateMetadataApprovalMap IS NOT NULL) AND (index4 IS NULL))
 Query Compliment Success
-Duration: 0.5176150798797607
+Duration: 0.40159034729003906
 ===============================18========================================
 --------Query--------
-SELECT RequestId, UsecaseIdAndVersion, Version, LastUpdatedTime, RequestState, DocumentMetadataList, WorkflowIdentifierMap, index1, index3, index4 FROM table WHERE (index1 IS NOT NULL) AND (index2 IS NULL) AND (index3 IS NOT NULL) AND (index4 IS NOT NULL) AND (updateMetadataApprovalMap IS NULL)
+SELECT LastUpdatedTime, RequestId, UsecaseIdAndVersion, RequestState, Version, DocumentMetadataList, WorkflowIdentifierMap, index1, index2, updateMetadataApprovalMap FROM table WHERE (index1 IS NOT NULL) AND (index3 IS NULL) AND (index2 IS NOT NULL) AND (updateMetadataApprovalMap IS NOT NULL) AND (index4 IS NULL)
 Query Success
 Write Success
 --------Query Compliment--------
-SELECT * FROM table WHERE NOT ((index1 IS NOT NULL) AND (index2 IS NULL) AND (index3 IS NOT NULL) AND (index4 IS NOT NULL) AND (updateMetadataApprovalMap IS NULL))
+SELECT * FROM table WHERE NOT ((index1 IS NOT NULL) AND (index3 IS NULL) AND (index2 IS NOT NULL) AND (updateMetadataApprovalMap IS NOT NULL) AND (index4 IS NULL))
 Query Compliment Success
-Duration: 0.48485565185546875
+Duration: 0.48315000534057617
 ===============================19========================================
 --------Query--------
-SELECT RequestId, UsecaseIdAndVersion, Version, LastUpdatedTime, RequestState, DocumentMetadataList, WorkflowIdentifierMap, index3, index4 FROM table WHERE (index1 IS NULL) AND (index2 IS NULL) AND (index3 IS NOT NULL) AND (index4 IS NOT NULL) AND (updateMetadataApprovalMap IS NULL)
+SELECT LastUpdatedTime, RequestId, UsecaseIdAndVersion, RequestState, Version, DocumentMetadataList, WorkflowIdentifierMap, index2, updateMetadataApprovalMap FROM table WHERE (index1 IS NULL) AND (index3 IS NULL) AND (index2 IS NOT NULL) AND (updateMetadataApprovalMap IS NOT NULL) AND (index4 IS NULL)
 Query Success
 Write Success
 --------Query Compliment--------
-SELECT * FROM table WHERE NOT ((index1 IS NULL) AND (index2 IS NULL) AND (index3 IS NOT NULL) AND (index4 IS NOT NULL) AND (updateMetadataApprovalMap IS NULL))
+SELECT * FROM table WHERE NOT ((index1 IS NULL) AND (index3 IS NULL) AND (index2 IS NOT NULL) AND (updateMetadataApprovalMap IS NOT NULL) AND (index4 IS NULL))
 Query Compliment Success
-Duration: 0.5416359901428223
+Duration: 0.4734671115875244
 ===============================20========================================
 --------Query--------
-SELECT RequestId, UsecaseIdAndVersion, Version, LastUpdatedTime, RequestState, DocumentMetadataList, WorkflowIdentifierMap, index1, index2, index4 FROM table WHERE (index1 IS NOT NULL) AND (index2 IS NOT NULL) AND (index3 IS NULL) AND (index4 IS NOT NULL) AND (updateMetadataApprovalMap IS NULL)
+SELECT LastUpdatedTime, RequestId, UsecaseIdAndVersion, RequestState, Version, DocumentMetadataList, WorkflowIdentifierMap, index1, index3, updateMetadataApprovalMap FROM table WHERE (index1 IS NOT NULL) AND (index3 IS NOT NULL) AND (index2 IS NULL) AND (updateMetadataApprovalMap IS NOT NULL) AND (index4 IS NULL)
 Query Success
 Write Success
 --------Query Compliment--------
-SELECT * FROM table WHERE NOT ((index1 IS NOT NULL) AND (index2 IS NOT NULL) AND (index3 IS NULL) AND (index4 IS NOT NULL) AND (updateMetadataApprovalMap IS NULL))
+SELECT * FROM table WHERE NOT ((index1 IS NOT NULL) AND (index3 IS NOT NULL) AND (index2 IS NULL) AND (updateMetadataApprovalMap IS NOT NULL) AND (index4 IS NULL))
 Query Compliment Success
-Duration: 0.45446205139160156
+Duration: 0.4354114532470703
 ===============================21========================================
 --------Query--------
-SELECT RequestId, UsecaseIdAndVersion, Version, LastUpdatedTime, RequestState, DocumentMetadataList, WorkflowIdentifierMap, index2, index4 FROM table WHERE (index1 IS NULL) AND (index2 IS NOT NULL) AND (index3 IS NULL) AND (index4 IS NOT NULL) AND (updateMetadataApprovalMap IS NULL)
+SELECT LastUpdatedTime, RequestId, UsecaseIdAndVersion, RequestState, Version, DocumentMetadataList, WorkflowIdentifierMap, index3, updateMetadataApprovalMap FROM table WHERE (index1 IS NULL) AND (index3 IS NOT NULL) AND (index2 IS NULL) AND (updateMetadataApprovalMap IS NOT NULL) AND (index4 IS NULL)
 Query Success
 Write Success
 --------Query Compliment--------
-SELECT * FROM table WHERE NOT ((index1 IS NULL) AND (index2 IS NOT NULL) AND (index3 IS NULL) AND (index4 IS NOT NULL) AND (updateMetadataApprovalMap IS NULL))
+SELECT * FROM table WHERE NOT ((index1 IS NULL) AND (index3 IS NOT NULL) AND (index2 IS NULL) AND (updateMetadataApprovalMap IS NOT NULL) AND (index4 IS NULL))
 Query Compliment Success
-Duration: 0.45995330810546875
+Duration: 0.4876217842102051
 ===============================22========================================
 --------Query--------
-SELECT RequestId, UsecaseIdAndVersion, Version, LastUpdatedTime, RequestState, DocumentMetadataList, WorkflowIdentifierMap, index1, index4 FROM table WHERE (index1 IS NOT NULL) AND (index2 IS NULL) AND (index3 IS NULL) AND (index4 IS NOT NULL) AND (updateMetadataApprovalMap IS NULL)
+SELECT LastUpdatedTime, RequestId, UsecaseIdAndVersion, RequestState, Version, DocumentMetadataList, WorkflowIdentifierMap, index1, updateMetadataApprovalMap FROM table WHERE (index1 IS NOT NULL) AND (index3 IS NULL) AND (index2 IS NULL) AND (updateMetadataApprovalMap IS NOT NULL) AND (index4 IS NULL)
 Query Success
 Write Success
 --------Query Compliment--------
-SELECT * FROM table WHERE NOT ((index1 IS NOT NULL) AND (index2 IS NULL) AND (index3 IS NULL) AND (index4 IS NOT NULL) AND (updateMetadataApprovalMap IS NULL))
+SELECT * FROM table WHERE NOT ((index1 IS NOT NULL) AND (index3 IS NULL) AND (index2 IS NULL) AND (updateMetadataApprovalMap IS NOT NULL) AND (index4 IS NULL))
 Query Compliment Success
-Duration: 0.4807863235473633
+Duration: 0.44700002670288086
 ===============================23========================================
 --------Query--------
-SELECT RequestId, UsecaseIdAndVersion, Version, LastUpdatedTime, RequestState, DocumentMetadataList, WorkflowIdentifierMap, index4 FROM table WHERE (index1 IS NULL) AND (index2 IS NULL) AND (index3 IS NULL) AND (index4 IS NOT NULL) AND (updateMetadataApprovalMap IS NULL)
+SELECT LastUpdatedTime, RequestId, UsecaseIdAndVersion, RequestState, Version, DocumentMetadataList, WorkflowIdentifierMap, updateMetadataApprovalMap FROM table WHERE (index1 IS NULL) AND (index3 IS NULL) AND (index2 IS NULL) AND (updateMetadataApprovalMap IS NOT NULL) AND (index4 IS NULL)
 Query Success
 Write Success
 --------Query Compliment--------
-SELECT * FROM table WHERE NOT ((index1 IS NULL) AND (index2 IS NULL) AND (index3 IS NULL) AND (index4 IS NOT NULL) AND (updateMetadataApprovalMap IS NULL))
+SELECT * FROM table WHERE NOT ((index1 IS NULL) AND (index3 IS NULL) AND (index2 IS NULL) AND (updateMetadataApprovalMap IS NOT NULL) AND (index4 IS NULL))
 Query Compliment Success
-Duration: 1.3981575965881348
+Duration: 0.44765305519104004
 ===============================24========================================
 --------Query--------
-SELECT RequestId, UsecaseIdAndVersion, Version, LastUpdatedTime, RequestState, DocumentMetadataList, WorkflowIdentifierMap, index1, index2, index3 FROM table WHERE (index1 IS NOT NULL) AND (index2 IS NOT NULL) AND (index3 IS NOT NULL) AND (index4 IS NULL) AND (updateMetadataApprovalMap IS NULL)
+SELECT LastUpdatedTime, RequestId, UsecaseIdAndVersion, RequestState, Version, DocumentMetadataList, WorkflowIdentifierMap, index1, index3, index2 FROM table WHERE (index1 IS NOT NULL) AND (index3 IS NOT NULL) AND (index2 IS NOT NULL) AND (updateMetadataApprovalMap IS NULL) AND (index4 IS NULL)
 Query Success
 Write Success
 --------Query Compliment--------
-SELECT * FROM table WHERE NOT ((index1 IS NOT NULL) AND (index2 IS NOT NULL) AND (index3 IS NOT NULL) AND (index4 IS NULL) AND (updateMetadataApprovalMap IS NULL))
+SELECT * FROM table WHERE NOT ((index1 IS NOT NULL) AND (index3 IS NOT NULL) AND (index2 IS NOT NULL) AND (updateMetadataApprovalMap IS NULL) AND (index4 IS NULL))
 Query Compliment Success
-Duration: 1.3540353775024414
+Duration: 1.2906684875488281
 ===============================25========================================
 --------Query--------
-SELECT RequestId, UsecaseIdAndVersion, Version, LastUpdatedTime, RequestState, DocumentMetadataList, WorkflowIdentifierMap, index2, index3 FROM table WHERE (index1 IS NULL) AND (index2 IS NOT NULL) AND (index3 IS NOT NULL) AND (index4 IS NULL) AND (updateMetadataApprovalMap IS NULL)
+SELECT LastUpdatedTime, RequestId, UsecaseIdAndVersion, RequestState, Version, DocumentMetadataList, WorkflowIdentifierMap, index3, index2 FROM table WHERE (index1 IS NULL) AND (index3 IS NOT NULL) AND (index2 IS NOT NULL) AND (updateMetadataApprovalMap IS NULL) AND (index4 IS NULL)
 Query Success
 Write Success
 --------Query Compliment--------
-SELECT * FROM table WHERE NOT ((index1 IS NULL) AND (index2 IS NOT NULL) AND (index3 IS NOT NULL) AND (index4 IS NULL) AND (updateMetadataApprovalMap IS NULL))
+SELECT * FROM table WHERE NOT ((index1 IS NULL) AND (index3 IS NOT NULL) AND (index2 IS NOT NULL) AND (updateMetadataApprovalMap IS NULL) AND (index4 IS NULL))
 Query Compliment Success
-Duration: 0.5376267433166504
+Duration: 0.47427988052368164
 ===============================26========================================
 --------Query--------
-SELECT RequestId, UsecaseIdAndVersion, Version, LastUpdatedTime, RequestState, DocumentMetadataList, WorkflowIdentifierMap, index1, index3 FROM table WHERE (index1 IS NOT NULL) AND (index2 IS NULL) AND (index3 IS NOT NULL) AND (index4 IS NULL) AND (updateMetadataApprovalMap IS NULL)
+SELECT LastUpdatedTime, RequestId, UsecaseIdAndVersion, RequestState, Version, DocumentMetadataList, WorkflowIdentifierMap, index1, index2 FROM table WHERE (index1 IS NOT NULL) AND (index3 IS NULL) AND (index2 IS NOT NULL) AND (updateMetadataApprovalMap IS NULL) AND (index4 IS NULL)
 Query Success
 Write Success
 --------Query Compliment--------
-SELECT * FROM table WHERE NOT ((index1 IS NOT NULL) AND (index2 IS NULL) AND (index3 IS NOT NULL) AND (index4 IS NULL) AND (updateMetadataApprovalMap IS NULL))
+SELECT * FROM table WHERE NOT ((index1 IS NOT NULL) AND (index3 IS NULL) AND (index2 IS NOT NULL) AND (updateMetadataApprovalMap IS NULL) AND (index4 IS NULL))
 Query Compliment Success
-Duration: 0.4939389228820801
+Duration: 1.2854976654052734
 ===============================27========================================
 --------Query--------
-SELECT RequestId, UsecaseIdAndVersion, Version, LastUpdatedTime, RequestState, DocumentMetadataList, WorkflowIdentifierMap, index3 FROM table WHERE (index1 IS NULL) AND (index2 IS NULL) AND (index3 IS NOT NULL) AND (index4 IS NULL) AND (updateMetadataApprovalMap IS NULL)
+SELECT LastUpdatedTime, RequestId, UsecaseIdAndVersion, RequestState, Version, DocumentMetadataList, WorkflowIdentifierMap, index2 FROM table WHERE (index1 IS NULL) AND (index3 IS NULL) AND (index2 IS NOT NULL) AND (updateMetadataApprovalMap IS NULL) AND (index4 IS NULL)
 Query Success
 Write Success
 --------Query Compliment--------
-SELECT * FROM table WHERE NOT ((index1 IS NULL) AND (index2 IS NULL) AND (index3 IS NOT NULL) AND (index4 IS NULL) AND (updateMetadataApprovalMap IS NULL))
+SELECT * FROM table WHERE NOT ((index1 IS NULL) AND (index3 IS NULL) AND (index2 IS NOT NULL) AND (updateMetadataApprovalMap IS NULL) AND (index4 IS NULL))
 Query Compliment Success
-Duration: 0.4611175060272217
+Duration: 0.4700815677642822
 ===============================28========================================
 --------Query--------
-SELECT RequestId, UsecaseIdAndVersion, Version, LastUpdatedTime, RequestState, DocumentMetadataList, WorkflowIdentifierMap, index1, index2 FROM table WHERE (index1 IS NOT NULL) AND (index2 IS NOT NULL) AND (index3 IS NULL) AND (index4 IS NULL) AND (updateMetadataApprovalMap IS NULL)
+SELECT LastUpdatedTime, RequestId, UsecaseIdAndVersion, RequestState, Version, DocumentMetadataList, WorkflowIdentifierMap, index1, index3 FROM table WHERE (index1 IS NOT NULL) AND (index3 IS NOT NULL) AND (index2 IS NULL) AND (updateMetadataApprovalMap IS NULL) AND (index4 IS NULL)
 Query Success
 Write Success
 --------Query Compliment--------
-SELECT * FROM table WHERE NOT ((index1 IS NOT NULL) AND (index2 IS NOT NULL) AND (index3 IS NULL) AND (index4 IS NULL) AND (updateMetadataApprovalMap IS NULL))
+SELECT * FROM table WHERE NOT ((index1 IS NOT NULL) AND (index3 IS NOT NULL) AND (index2 IS NULL) AND (updateMetadataApprovalMap IS NULL) AND (index4 IS NULL))
 Query Compliment Success
-Duration: 1.281367301940918
+Duration: 0.46469783782958984
 ===============================29========================================
 --------Query--------
-SELECT RequestId, UsecaseIdAndVersion, Version, LastUpdatedTime, RequestState, DocumentMetadataList, WorkflowIdentifierMap, index2 FROM table WHERE (index1 IS NULL) AND (index2 IS NOT NULL) AND (index3 IS NULL) AND (index4 IS NULL) AND (updateMetadataApprovalMap IS NULL)
+SELECT LastUpdatedTime, RequestId, UsecaseIdAndVersion, RequestState, Version, DocumentMetadataList, WorkflowIdentifierMap, index3 FROM table WHERE (index1 IS NULL) AND (index3 IS NOT NULL) AND (index2 IS NULL) AND (updateMetadataApprovalMap IS NULL) AND (index4 IS NULL)
 Query Success
 Write Success
 --------Query Compliment--------
-SELECT * FROM table WHERE NOT ((index1 IS NULL) AND (index2 IS NOT NULL) AND (index3 IS NULL) AND (index4 IS NULL) AND (updateMetadataApprovalMap IS NULL))
+SELECT * FROM table WHERE NOT ((index1 IS NULL) AND (index3 IS NOT NULL) AND (index2 IS NULL) AND (updateMetadataApprovalMap IS NULL) AND (index4 IS NULL))
 Query Compliment Success
-Duration: 0.5183107852935791
+Duration: 0.45347070693969727
 ===============================30========================================
 --------Query--------
-SELECT RequestId, UsecaseIdAndVersion, Version, LastUpdatedTime, RequestState, DocumentMetadataList, WorkflowIdentifierMap, index1 FROM table WHERE (index1 IS NOT NULL) AND (index2 IS NULL) AND (index3 IS NULL) AND (index4 IS NULL) AND (updateMetadataApprovalMap IS NULL)
+SELECT LastUpdatedTime, RequestId, UsecaseIdAndVersion, RequestState, Version, DocumentMetadataList, WorkflowIdentifierMap, index1 FROM table WHERE (index1 IS NOT NULL) AND (index3 IS NULL) AND (index2 IS NULL) AND (updateMetadataApprovalMap IS NULL) AND (index4 IS NULL)
 Query Success
 Write Success
 --------Query Compliment--------
-SELECT * FROM table WHERE NOT ((index1 IS NOT NULL) AND (index2 IS NULL) AND (index3 IS NULL) AND (index4 IS NULL) AND (updateMetadataApprovalMap IS NULL))
+SELECT * FROM table WHERE NOT ((index1 IS NOT NULL) AND (index3 IS NULL) AND (index2 IS NULL) AND (updateMetadataApprovalMap IS NULL) AND (index4 IS NULL))
 Query Compliment Success
-Duration: 1.2555327415466309
+Duration: 1.1889865398406982
 ===============================31========================================
 --------Query--------
-SELECT RequestId, UsecaseIdAndVersion, Version, LastUpdatedTime, RequestState, DocumentMetadataList, WorkflowIdentifierMap FROM table WHERE (index1 IS NULL) AND (index2 IS NULL) AND (index3 IS NULL) AND (index4 IS NULL) AND (updateMetadataApprovalMap IS NULL)
+SELECT LastUpdatedTime, RequestId, UsecaseIdAndVersion, RequestState, Version, DocumentMetadataList, WorkflowIdentifierMap FROM table WHERE (index1 IS NULL) AND (index3 IS NULL) AND (index2 IS NULL) AND (updateMetadataApprovalMap IS NULL) AND (index4 IS NULL)
 Query Success
 Write Success
 --------Query Compliment--------
-SELECT * FROM table WHERE NOT ((index1 IS NULL) AND (index2 IS NULL) AND (index3 IS NULL) AND (index4 IS NULL) AND (updateMetadataApprovalMap IS NULL))
+SELECT * FROM table WHERE NOT ((index1 IS NULL) AND (index3 IS NULL) AND (index2 IS NULL) AND (updateMetadataApprovalMap IS NULL) AND (index4 IS NULL))
 Query Compliment Success
-Duration: 1.4351134300231934
+Duration: 1.358677625656128
