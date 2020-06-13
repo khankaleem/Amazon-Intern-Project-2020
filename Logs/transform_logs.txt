@@ -1,4 +1,0 @@
-Workflow Schema changed! duration: 0.2222130298614502
-useCaseId and Version concatenated! Duration: 0.04715156555175781
-Results schema change! Duration: 0.14111876487731934
-Main Field names changed! Duration: 0.08829855918884277
