@@ -165,13 +165,11 @@ The script worked fine on my machine but kept failing on the cluster.
 Investigated the errors thrown, but was not able to figure them out.
 
 Figured another solution to problem in phase1.
-The glue dynamic frame has two disadvantages over spark dataframe:
-1). Writes null values in columns not defined.
-2). It shuffles the data inside columns.
-For first approach sql queries were written. Which consume some time.
-The second approach will cost more in data completeness and integrity check and will also make it complicated.
-A spark dataframe skips null values and does not shuffle order of columns. Hence we get rid of queries in schema transformation
-and save time on completeness and integrity.
+The glue dynamic frame has one disadvantages over spark dataframe:
+It Writes null values in columns not defined.
+For first approach sql queries were written. Which consumed some time.
+A spark dataframe skips null values. Hence we get rid of queries in schema transformation
+and save time.
 
 
 
