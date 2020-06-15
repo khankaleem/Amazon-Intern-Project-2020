@@ -15,6 +15,7 @@ from awsglue.context import GlueContext
 from awsglue.dynamicframe import DynamicFrame
 from awsglue.job import Job
 
+ 
 #Initialize contexts, session and job
 args = getResolvedOptions(sys.argv, ["JOB_NAME"])
 spark_context = SparkContext.getOrCreate()
@@ -49,7 +50,7 @@ def ReadData(GlueDatabase, GlueTable, log_bucket, read_log_object):
     
     #Convert dynamic frame to data frame to use standard pyspark functions
     return dynamic_frame_read.toDF()
-
+    
 #Transforms the schema of the dataframe
 def TransformData(data_frame, log_bucket, transform_log_object):
     
@@ -93,12 +94,33 @@ def TransformData(data_frame, log_bucket, transform_log_object):
         for old_name, new_name in old_to_new_mapping.items():
                 data_frame = data_frame.withColumnRenamed(old_name, new_name)
         return data_frame
+
+
+    #Remove storageAttributes
+    def Remove_storageAttributes(data_frame):
+        
+        expression = 'transform(results.l, x -> struct(struct( \
+                                                            x.m.storageAttributesList as storageAttributesList, \
+                                                            x.m.otherAttributes as otherAttributes, \
+                                                            x.m.documentExchangeDetailsDO as documentExchangeDetailsDO, \
+                                                            x.m.rawDataStorageDetailsList as rawDataStorageDetailsList, \
+                                                            x.m.documentConsumers as documentConsumers, \
+                                                            x.m.documentIdentifiers as documentIdentifiers) as m))'
+        
+        data_frame = data_frame.withColumn("results", f.struct(f.expr(expression).alias("l")))
+        return data_frame
+        
+    #Removed storage attributes
+    start_time = time()        
+    data_frame = Remove_storageAttributes(data_frame)
+    end_time = time()
+    transform_logs += "storageAttributes removed! Duration: " + str(end_time - start_time) + "\n"
     
     #change workflowId schema
     start_time = time()        
     data_frame = ChangeWorkflowIdSchema(data_frame)
     end_time = time()
-    transform_logs += "Workflow Schema changed! duration: " + str(end_time - start_time) + "\n"
+    transform_logs += "Workflow Schema changed! Duration: " + str(end_time - start_time) + "\n"
     
     #concatenate useCaseId and version
     start_time = time()        
@@ -113,7 +135,6 @@ def TransformData(data_frame, log_bucket, transform_log_object):
     old_to_new_mapping['documentExchangeDetailsDO'] = 'documentExchangeDetailsList'
     old_to_new_mapping['rawDataStorageDetailsList'] = 'rawDocumentDetailsList'
     old_to_new_mapping['documentConsumers'] = 'documentConsumerList'
-    old_to_new_mapping['storageAttributes'] = 'storageAttributes'
     old_to_new_mapping['documentIdentifiers'] = 'documentIdentifierList'
     old_to_new_mapping['storageAttributesList'] = 'generatedDocumentDetailsList'
     old_to_new_mapping['otherAttributes'] = 'documentTags'
