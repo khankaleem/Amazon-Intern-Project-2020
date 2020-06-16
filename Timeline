@@ -162,7 +162,9 @@ Studied about map reduce technology.
 Launched an EMR Cluster.
 and wrote a sample mapper and reducer to count the number of words in a file.
 The script worked fine on my machine but kept failing on the cluster.
-Investigated the errors thrown, but was not able to figure them out.
+Error code 1. 
+Investigated the errors thrown, So the problem was that hadoop was not able to guess the environment of the 
+python code. so it was required to ssh into the master node and give the command from the terminal with python3 specified.
 
 Figured another solution to problem in phase1.
 The glue dynamic frame has one disadvantages over spark dataframe:
@@ -171,8 +173,14 @@ For first approach sql queries were written. Which consumed some time.
 A spark dataframe skips null values. Hence we get rid of queries in schema transformation
 and save time.
 
+Week 6
+Removed storageAttributes from old schema.
+Used inbuilt function from glue drop_fields. But that was dropping the entire results column if it did not contain the path.
+UDF is very inefficient because results column is very lage.
+So used transform function in spark.
 
-
+Wrote a sample mapper and reducer function for completelness check.
+The script was running fine on my local machine but failing on emr.
 
 
 
