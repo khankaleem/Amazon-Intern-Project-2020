@@ -1,5 +1,5 @@
 '''
-The script reads data from S3, transforms the data and writes it back to S3.
+The script reads data from glue data catalog, transforms the data and writes it back to S3.
 Method for reading: readData
 Method for tranforming: tranformSchema
 Method for writing: writeData
@@ -13,22 +13,15 @@ from time import time
 #Import PySpark modules
 from pyspark.context import SparkContext
 import pyspark.sql.functions as f
-from pyspark.sql.types import *
-from pyspark.sql import SparkSession
 
 #Import Glue modules
-from awsglue.utils import getResolvedOptions
 from awsglue.context import GlueContext
 from awsglue.dynamicframe import DynamicFrame
-from awsglue.job import Job
 
-#Initialize contexts, spark session and job
-args = getResolvedOptions(sys.argv, ["JOB_NAME"])
+#Initialize Glue context
 spark_context = SparkContext.getOrCreate()
 glue_context = GlueContext(spark_context)
-session = glue_context.spark_session
-job = Job(glue_context)
-job.init(args["JOB_NAME"], args)
+
 
 '''
 Reads transactions data from the glue table in glue database, into a glue dynamic frame.
@@ -36,10 +29,10 @@ Converts the glue dynamic frame to a PySpark dataframe. If reading fails program
 Input: 
     glueDatabase: The resource specifying the logical tables in AWS Glue
     glueTable: The resource specifying the tabular data in the AWS Glue data catalog
-    s3LogBucket: The name s3 bucket for logging of read success/failure
+    s3LogBucket: The name of s3 bucket for logging of read success/failure
     s3Client: The s3 client for logging
 Output:
-    transactionsDataFrame: a PySpark dataframe containing transactions data
+    transactionsDataframe: PySpark dataframe containing transactions data
 '''
 def readData(glueDatabase, glueTable, s3LogBucket, s3Client):
     
@@ -67,7 +60,7 @@ Input:
     s3LogBucket: The name of s3 bucket for logging
     s3Client: The s3 client for logging
 Output:
-    ipMetadataDataFrame: Transformed transactions dataframe
+    ipMetadataDataframe: Transformed transactions dataframe
 '''
 def transformSchema(transactionsDataframe, s3LogBucket, s3Client):
         
@@ -75,7 +68,7 @@ def transformSchema(transactionsDataframe, s3LogBucket, s3Client):
     The method returns the schema of a main column in the form of a string.
     Parameters:
         columnName: the name of the main column
-        dataFrame: the data frame containing the column
+        dataframe: the data frame containing the column
     '''
     def getSchema(columnName, dataframe):
         #get the column schema in the form of string
@@ -86,7 +79,7 @@ def transformSchema(transactionsDataframe, s3LogBucket, s3Client):
     '''
     The method changes the workflowId schema.
     Parameters:
-        oldDataFrame: The dataframe whose schema needs to be changed
+        oldDataframe: The dataframe whose schema needs to be changed
     '''
     def changeWorkflowIdSchema(oldDataframe):
         
@@ -101,7 +94,7 @@ def transformSchema(transactionsDataframe, s3LogBucket, s3Client):
     '''
     The method concatenates useCaseId and version.
     Parameters:
-        oldDataFrame: The dataframe whose schema needs to be changed
+        oldDataframe: The dataframe whose schema needs to be changed
     '''
     def concatenateUseCaseIdAndVersion(oldDataframe):
         newDataframe = oldDataframe.withColumn("useCaseId", f.struct(f.concat(f.col("useCaseId.s"), f.lit(":"), f.col("version.n")).alias("s")))
@@ -114,7 +107,7 @@ def transformSchema(transactionsDataframe, s3LogBucket, s3Client):
         oldDataframe: the data frame containing the main column
         nestedMapping: The mapping of the nested fields inside the main column
     '''
-    def changeNestedFieldNames(oldDataframe, columnName, nestedMapping):
+    def changeNestedColumnNames(oldDataframe, columnName, nestedColumnMapping):
         #check if column exists in the schema
         if columnName not in oldDataframe.columns:
             return oldDataframe
@@ -123,7 +116,7 @@ def transformSchema(transactionsDataframe, s3LogBucket, s3Client):
         column_schema = getSchema(columnName, oldDataframe)
         
         #iterate over the mapping and change the old field names to new field names
-        for old_name, new_name in nestedMapping.items():
+        for old_name, new_name in nestedColumnMapping.items():
             column_schema = column_schema.replace(old_name, new_name)
         
         #null cannot be casted to null, so change the null mentions in the schema to string
@@ -136,10 +129,10 @@ def transformSchema(transactionsDataframe, s3LogBucket, s3Client):
     '''
     The method changes the main field names in the old dataframe.
     Parameters:
-        oldDataFrame: The dataframe whose schema needs to be changed
-        mainFieldMapping: contains the mapping of the main field names in oldDataFrame
+        oldDataframe: The dataframe whose schema needs to be changed
+        mainColumnMapping: contains the mapping of the main field names in oldDataframe
     '''
-    def changeMainFieldNames(oldDataframe, mainColumnMapping):
+    def changeMainColumnNames(oldDataframe, mainColumnMapping):
         #iterate over the mapping and change the old field names to new field names
         newDataframe = oldDataframe
         for old_name, new_name in mainColumnMapping.items():
@@ -151,11 +144,11 @@ def transformSchema(transactionsDataframe, s3LogBucket, s3Client):
     '''
     The method removes the nested fields in results from old data frame.
     Parameters:
-        oldDataFrame: The dataframe whose schema needs to be changed 
+        oldDataframe: The dataframe whose schema needs to be changed 
         dropList: The list of nested fields inside results to be dropped
         keepList: The list of nested fields inside results to be kept
     '''
-    def dropNestedFieldsInResults(oldDataframe, dropList, keepList):
+    def dropNestedColumnsInResults(oldDataframe, dropList, keepList):
         #check if results exists or dropList is empty
         if "results" not in oldDataframe.columns or len(dropList) == 0:
             return oldDataframe
@@ -175,29 +168,33 @@ def transformSchema(transactionsDataframe, s3LogBucket, s3Client):
     #Initialize logs
     logs_ = ""
     
-    #Initialize new ipMetadataDataFrame
+    #Initialize new ipMetadataDataframe
     ipMetadataDataframe = transactionsDataframe
     
-    #Remove storage attributes
     '''
+    Remove storage attributes: The content of storageAttributes is already present in storageAttributesList, hence remove the redundancy
     dropList contains nested columns inside results that need to be dropped
     keepList contains nested columns inside results that need to be retained
-    Change the keepList and dropList as per your use case
+    Change the keepList and dropList as per the usecase
     '''
     keepList = ["storageAttributesList", "otherAttributes", "documentExchangeDetailsDO", "rawDataStorageDetailsList", "documentConsumers", "documentIdentifiers"]
     dropList = ["storageAttributes"]
     start_time = time()
-    ipMetadataDataframe = dropNestedFieldsInResults(ipMetadataDataframe, dropList, keepList)
+    ipMetadataDataframe = dropNestedColumnsInResults(ipMetadataDataframe, dropList, keepList)
     end_time = time()
     logs_ += "storageAttributes removed! Duration: " + str(end_time - start_time) + "\n"
     
-    #change workflowId schema
+    '''
+    change workflowId schema
+    '''
     start_time = time()
     ipMetadataDataframe = changeWorkflowIdSchema(ipMetadataDataframe)
     end_time = time()
     logs_ += "Workflow Schema changed! Duration: " + str(end_time - start_time) + "\n"
     
-    #concatenate useCaseId and version
+    '''
+    concatenate useCaseId and version
+    '''
     start_time = time()
     ipMetadataDataframe = concatenateUseCaseIdAndVersion(ipMetadataDataframe)
     end_time = time()
@@ -205,7 +202,7 @@ def transformSchema(transactionsDataframe, s3LogBucket, s3Client):
     
     '''
     resultsMapping contains mapping of old schema nested fields to new schema nested fields in results.
-    Change the mapping as per your use case.
+    Change the mapping as per the usecase.
     '''
     resultsNestedColumnMapping = {}
     resultsNestedColumnMapping['documentExchangeDetailsDO'] = 'documentExchangeDetailsList'
@@ -216,13 +213,13 @@ def transformSchema(transactionsDataframe, s3LogBucket, s3Client):
     resultsNestedColumnMapping['otherAttributes'] = 'documentTags'
     
     start_time = time()
-    ipMetadataDataframe = changeNestedFieldNames(ipMetadataDataframe, "results", resultsNestedColumnMapping)
+    ipMetadataDataframe = changeNestedColumnNames(ipMetadataDataframe, "results", resultsNestedColumnMapping)
     end_time = time()
     logs_ += "Results schema change! Duration: " + str(end_time - start_time) + "\n"
     
     '''
     mainFieldMapping contains mapping of old schema main fields to new schema main fields.
-    Change the mapping as per your use case.
+    Change the mapping as per the usecase.
     '''
     mainColumnMapping = {}
     mainColumnMapping["TenantIdTransactionId"] = "RequestId"
@@ -234,7 +231,7 @@ def transformSchema(transactionsDataframe, s3LogBucket, s3Client):
     mainColumnMapping["results"] = "DocumentMetadataList"
     
     start_time = time()
-    ipMetadataDataframe = changeMainFieldNames(ipMetadataDataframe, mainColumnMapping)
+    ipMetadataDataframe = changeMainColumnNames(ipMetadataDataframe, mainColumnMapping)
     end_time = time()
     logs_ += "Main Field names changed! Duration: " + str(end_time - start_time) + "\n"
     
@@ -286,19 +283,17 @@ glueTable = "2020_05_28_16_08_00"
 transactionsDataframe = readData(glueDatabase, glueTable, s3LogBucket, s3Client)
 
 '''
-TRANSFORM DATA
+TRANSFORM DATA:
+    Transform the transactionsDataframe
 '''
 
 ipMetadataDataframe = transformSchema(transactionsDataframe, s3LogBucket, s3Client)
 
 '''
 #LOAD DATA
-    load Ip-metadata to s3.
+    load ipMetadataDataframe to s3.
     The parameter s3WritePath needs to be specified before executing the job
 '''
 
 s3WritePath = "s3://ip-metadata-bucket-demo/"
 writeData(ipMetadataDataframe, s3WritePath, s3LogBucket, s3Client)
-
-#Commit Job
-job.commit()
