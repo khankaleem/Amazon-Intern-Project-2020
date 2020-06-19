@@ -36,19 +36,35 @@ Output:
 '''
 def readData(glueDatabase, glueTable, s3LogBucket, s3Client):
     
+    success = None
+    logs_ = ""
     try:
         #Read data into Glue dynamic frame
         glue_dynamic_frame = glue_context.create_dynamic_frame.from_catalog(database = glueDatabase, table_name = glueTable)
-        #write success logs in s3LogBucket to file _readSuccess_
-        s3Client.Object(s3LogBucket, "_readSuccess_").put(Body = "Read Successful\n")
+        success =  True
+        logs_ += "Read Successful\n"
     except Exception as e:
-        #write failure logs in s3LogBucket to file _readFailure_
-        s3Client.Object(s3LogBucket, "_readFailure_").put(Body = "Read Failed\n" + str(e))
+        success = False
+        logs_ += "Read Failed\n" + str(e)
+    
+    #write success logs in s3LogBucket to file _readSuccess_
+    if success is True:
+        try:
+            s3Client.Object(s3LogBucket, "_readSuccess_").put(Body = logs_)
+        except:
+            pass
+    #write failure logs in s3LogBucket to file _readFailure_
+    else:
+        try:
+            s3Client.Object(s3LogBucket, "_readFailure_").put(Body = logs_)
+        except:
+            pass
         #terminate program
         sys.exit()
         
     #Convert glue dynamic frame to spark data frame to use standard pyspark functions
     transactionsDataframe = glue_dynamic_frame.toDF()
+    
     #return the pyspark data frame
     return transactionsDataframe
     
@@ -236,7 +252,10 @@ def transformSchema(transactionsDataframe, s3LogBucket, s3Client):
     logs_ += "Main Field names changed! Duration: " + str(end_time - start_time) + "\n"
     
     #write transformation logs in s3LogBucket to file _TransformationLogs_
-    s3Client.Object(s3LogBucket, "_TransformationLogs_").put(Body = logs_)
+    try:
+        s3Client.Object(s3LogBucket, "_TransformationLogs_").put(Body = logs_)
+    except:
+        pass
     
     #return the transformed dataframe
     return ipMetadataDataframe
@@ -264,8 +283,10 @@ def writeData(ipMetadataDataframe, s3WritePath, s3LogBucket, s3Client):
         logs_ += "Write Failed!\n" + str(e) + "\n"
     
     #write logs in s3LogBucket to file _WriteLogs_
-    s3Client.Object(s3LogBucket, "_WriteLogs_").put(Body = logs_)
-    
+    try:
+        s3Client.Object(s3LogBucket, "_WriteLogs_").put(Body = logs_)
+    except:
+        pass
 
 #Build s3 client for logging
 s3Client = boto3.resource("s3")
