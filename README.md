@@ -1,3 +1,3 @@
 # Amazon-Intern-Project-2020
 
-optimized version => version-5
+current version => version-6
