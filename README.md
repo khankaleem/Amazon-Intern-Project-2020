@@ -1,1 +1,1 @@
-# Amazon-Intern-Project-2020
+# Amazon-Internship-Project-2020
