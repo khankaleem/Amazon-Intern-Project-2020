@@ -1,5 +1,5 @@
 '''
-The script reads data from glue data catalog, transforms the data and writes it back to S3.
+The script reads transactions data from glue data catalog, transforms the data and writes it back to S3.
 Method for reading: readData
 Method for tranforming: tranformSchema
 Method for writing: writeData
