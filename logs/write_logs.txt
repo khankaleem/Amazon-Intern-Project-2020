@@ -1,2 +1,0 @@
-Write success!
-Duration: 2.541870594024658
