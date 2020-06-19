@@ -1,11 +1,11 @@
 '''
-The script reads transactions data from glue data catalog, transforms the schema and writes it back to S3.
+The script reads transactions data from the glue data catalog, transforms its schema and writes it back to S3.
 Method for reading: readData
 Method for tranforming schema: tranformSchema
 Method for writing: writeData
 '''
 
-#Import python modules
+#Import Python modules
 import sys
 import boto3
 from time import time
@@ -24,7 +24,7 @@ glue_context = GlueContext(spark_context)
 
 
 '''
-Reads transactions data from the glue table in glue database, into a glue dynamic frame.
+The method reads transactions data from the glue table in glue database, into a glue dynamic frame.
 Converts the glue dynamic frame to a PySpark dataframe. If reading fails program is terminated.
 Input: 
     glueDatabase: The resource specifying the logical tables in AWS Glue
@@ -82,20 +82,24 @@ def transformSchema(transactionsDataframe, s3LogBucket, s3Client):
         
     '''
     The method returns the schema of a main column in the form of a string.
-    Parameters:
-        columnName: the name of the main column
-        dataframe: the data frame containing the column
+    Input:
+        mainColumnName: the name of the main column
+        dataframe: the data frame containing the main column
+    Ouput: 
+        The main column schema in the form of a string
     '''
-    def getSchema(columnName, dataframe):
+    def getSchema(mainColumnName, dataframe):
         #get the column schema in the form of string
-        schema = dataframe.select(columnName).schema.simpleString()
-        startId = len("struct<" + columnName + ":")
+        schema = dataframe.select(mainColumnName).schema.simpleString()
+        startId = len("struct<" + mainColumnName + ":")
         return schema[startId:-1]
         
     '''
     The method changes the workflowId schema.
-    Parameters:
+    Input:
         oldDataframe: The dataframe whose schema needs to be changed
+    Output: 
+        newDataframe: The dataframe with key generateInvoiceGraph added to workflowId schema
     '''
     def changeWorkflowIdSchema(oldDataframe):
         
@@ -109,19 +113,23 @@ def transformSchema(transactionsDataframe, s3LogBucket, s3Client):
     
     '''
     The method concatenates useCaseId and version.
-    Parameters:
+    Input:
         oldDataframe: The dataframe whose schema needs to be changed
+    Output:
+        newDataframe: The dataframe with useCaseId and version concatenated by the literal ":"
     '''
     def concatenateUseCaseIdAndVersion(oldDataframe):
         newDataframe = oldDataframe.withColumn("useCaseId", f.struct(f.concat(f.col("useCaseId.s"), f.lit(":"), f.col("version.n")).alias("s")))
         return newDataframe
     
     '''
-    The method changes the nested fields of a main column in the old dataframe.
-    Parameters: 
+    The method changes names of the nested columns of a main column in the old dataframe.
+    Input: 
         columnName: the name of the main column
         oldDataframe: the data frame containing the main column
-        nestedMapping: The mapping of the nested fields inside the main column
+        nestedColumnMapping: The mapping of the names of the nested fields inside the main column
+    Output:
+        newDataframe: The dataframe with nested columns of the main column renamed
     '''
     def changeNestedColumnNames(oldDataframe, columnName, nestedColumnMapping):
         #check if column exists in the schema
@@ -144,25 +152,32 @@ def transformSchema(transactionsDataframe, s3LogBucket, s3Client):
     
     '''
     The method changes the main field names in the old dataframe.
-    Parameters:
+    Input:
         oldDataframe: The dataframe whose schema needs to be changed
         mainColumnMapping: contains the mapping of the main field names in oldDataframe
+    Output:
+        newDataframe: The dataframe with the main columns renamed
     '''
     def changeMainColumnNames(oldDataframe, mainColumnMapping):
-        #iterate over the mapping and change the old field names to new field names
+        
+        #initialize new dataframe
         newDataframe = oldDataframe
+        #iterate over the mapping and change the old field names to new field names
         for old_name, new_name in mainColumnMapping.items():
             #check if old name is in schema
             if old_name in oldDataframe.columns:
                 newDataframe = newDataframe.withColumnRenamed(old_name, new_name)
+        
         return newDataframe
     
     '''
-    The method removes the nested fields in results from old data frame.
-    Parameters:
+    The method removes the nested columns in results from old data frame.
+    Input:
         oldDataframe: The dataframe whose schema needs to be changed 
-        dropList: The list of nested fields inside results to be dropped
-        keepList: The list of nested fields inside results to be kept
+        dropList: The list of nested columns inside results to be dropped
+        keepList: The list of nested columns inside results to be kept
+    Output:
+        newDataframe: The dataframe with the nested columns in results dropped 
     '''
     def dropNestedColumnsInResults(oldDataframe, dropList, keepList):
         #check if results exists or dropList is empty
