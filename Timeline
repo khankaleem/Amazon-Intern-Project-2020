@@ -180,7 +180,37 @@ UDF is very inefficient because results column is very lage.
 So used transform function in spark.
 
 Wrote a sample mapper and reducer function for completelness check.
-The script was running fine on my local machine but failing on emr.
+The script was giving errors. error code 1 => general syntax mistake
+
+Error because new was being printed in mapper.
+stopped printing new lines.
+
+Coded the mapper and reducer and tested on EMR.
+The outputs were correct.
+
+Worked on code comments from phase1.
+Made the code more extensible.
+DropList and KeepList was introduced for extensibilty of removing nested column in results from dataframe.
+Changed variable names, commented functions for better readability of code.
+
+Researched a bit on ideal no. of mappers and reducers for a job.
+Reducers = nodes * cores * (0.95 - 1.75)
+Mappers = data/blocksize
+
+
+Week 7
+Worked on code comments from phase 2.
+change variable names, function working, commented everything.
+
+
+
+
+
+
+
+
+
+
 
 
 
