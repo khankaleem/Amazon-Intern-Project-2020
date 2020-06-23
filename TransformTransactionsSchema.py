@@ -29,45 +29,21 @@ Converts the glue dynamic frame to a PySpark dataframe. If reading fails program
 Input: 
     glueDatabase: The resource specifying the logical tables in AWS Glue
     glueTable: The resource specifying the tabular data in the AWS Glue data catalog
-    s3LogBucket: The name of s3 bucket for logging of read success/failure
-    s3Client: The s3 client for logging
 Output:
     transactionsDataframe: PySpark dataframe containing transactions data
 '''
-def readData(glueDatabase, glueTable, s3LogBucket, s3Client):
-    
-    success = None
-    logs_ = ""
+def readData(glueDatabase, glueTable):
+
     try:
         #Read data into Glue dynamic frame
-        glue_dynamic_frame = glue_context.create_dynamic_frame.from_catalog(database = glueDatabase, table_name = glueTable)
-        success =  True
-        logs_ += "Read Successful\n"
+        glueDynamicFrame = glue_context.create_dynamic_frame.from_catalog(database = glueDatabase, table_name = glueTable)
+        #Convert glue dynamic frame to spark data frame to use standard pyspark functions
+        return glueDynamicFrame.toDF()
     except Exception as e:
-        success = False
-        logs_ += "Read Failed\n" + str(e)
-    
-    #write success logs in s3LogBucket to file _readSuccess_
-    if success is True:
-        try:
-            s3Client.Object(s3LogBucket, "_readSuccess_").put(Body = logs_)
-        except:
-            pass
-    #write failure logs in s3LogBucket to file _readFailure_
-    else:
-        try:
-            s3Client.Object(s3LogBucket, "_readFailure_").put(Body = logs_)
-        except:
-            pass
-        #terminate program
+        #Log read failure to console. Visibile in logs of AWS glue on console.
+        print("=======Read Failed=======\n" + str(e))
+        #Terminate program
         sys.exit()
-        
-    #Convert glue dynamic frame to spark data frame to use standard pyspark functions
-    transactionsDataframe = glue_dynamic_frame.toDF()
-    
-    #return the pyspark data frame
-    return transactionsDataframe
-    
 
 '''
 The method transforms the transactions dataframe schema.
@@ -97,110 +73,102 @@ def transformSchema(transactionsDataframe, s3LogBucket, s3Client):
     '''
     The method changes the workflowId schema.
     Input:
-        oldDataframe: The dataframe whose schema needs to be changed
+        transactionsDataframe: The dataframe whose schema needs to be changed
     Output: 
-        newDataframe: The dataframe with key generateInvoiceGraph added to workflowId schema
+        The dataframe with key generateInvoiceGraph added to workflowId schema
     '''
-    def changeWorkflowIdSchema(oldDataframe):
+    def changeWorkflowIdSchema(transactionsDataframe):
         
         #check if workflowId column is in the schema
-        if "workflowId" in oldDataframe.columns:
-            #change workflowId schema
-            newDataframe = oldDataframe.withColumn("workflowId", f.when(f.col("workflowId").isNotNull(), f.struct(f.struct(f.struct(f.col("workflowId.m")).alias("generateInvoiceGraph")).alias("m"))).otherwise(f.lit(None)))
-        
-        #return the transformed dataframe
-        return newDataframe
+        if "workflowId" in transactionsDataframe.columns:
+            return transactionsDataframe.withColumn("workflowId", f.when(f.col("workflowId").isNotNull(), f.struct(f.struct(f.struct(f.col("workflowId.m")).alias("generateInvoiceGraph")).alias("m"))).otherwise(f.lit(None)))
+        else:
+            return transactionsDataframe
     
     '''
     The method concatenates useCaseId and version.
     Input:
-        oldDataframe: The dataframe whose schema needs to be changed
+        transactionsDataframe: The dataframe whose schema needs to be changed
     Output:
-        newDataframe: The dataframe with useCaseId and version concatenated by the literal ":"
+        The dataframe with useCaseId and version concatenated by the literal ":"
     '''
-    def concatenateUseCaseIdAndVersion(oldDataframe):
-        newDataframe = oldDataframe.withColumn("useCaseId", f.struct(f.concat(f.col("useCaseId.s"), f.lit(":"), f.col("version.n")).alias("s")))
-        return newDataframe
-    
+    def concatenateUseCaseIdAndVersion(transactionsDataframe):
+        return transactionsDataframe.withColumn("useCaseId", f.struct(f.concat(f.col("useCaseId.s"), f.lit(":"), f.col("version.n")).alias("s")))
+        
     '''
     The method changes names of the nested columns of a main column in the old dataframe.
     Input: 
         columnName: the name of the main column
-        oldDataframe: the data frame containing the main column
+        transactionsDataframe: the data frame containing the main column
         nestedColumnMapping: The mapping of the names of the nested fields inside the main column
     Output:
-        newDataframe: The dataframe with nested columns of the main column renamed
+        The dataframe with nested columns of the main column renamed
     '''
-    def changeNestedColumnNames(oldDataframe, columnName, nestedColumnMapping):
+    def changeNestedColumnNames(transactionsDataframe, columnName, nestedColumnMapping):
         #check if column exists in the schema
-        if columnName not in oldDataframe.columns:
-            return oldDataframe
+        if columnName not in transactionsDataframe.columns:
+            return transactionsDataframe
         
         #get column schema in the form of string
-        column_schema = getSchema(columnName, oldDataframe)
+        column_schema = getSchema(columnName, transactionsDataframe)
         
         #iterate over the mapping and change the old field names to new field names
         for old_name, new_name in nestedColumnMapping.items():
-            column_schema = column_schema.replace(old_name, new_name)
+            if old_name in column_schema:
+                column_schema = column_schema.replace(old_name, new_name)
         
         #null cannot be casted to null, so change the null mentions in the schema to string
         column_schema = column_schema.replace('null', 'string')
         
         #cast the old schema to new schema
-        newDataframe = oldDataframe.withColumn(columnName, f.col(columnName).cast(column_schema))
-        return newDataframe
+        return transactionsDataframe.withColumn(columnName, f.col(columnName).cast(column_schema))
     
     '''
     The method changes the main field names in the old dataframe.
     Input:
-        oldDataframe: The dataframe whose schema needs to be changed
+        transactionsDataframe: The dataframe whose schema needs to be changed
         mainColumnMapping: contains the mapping of the main field names in oldDataframe
     Output:
-        newDataframe: The dataframe with the main columns renamed
+        transformedTransactionsDataframe: The dataframe with the main columns renamed
     '''
-    def changeMainColumnNames(oldDataframe, mainColumnMapping):
+    def changeMainColumnNames(transactionsDataframe, mainColumnMapping):
         
         #initialize new dataframe
-        newDataframe = oldDataframe
+        transformedTransactionsDataframe = transactionsDataframe
         #iterate over the mapping and change the old field names to new field names
         for old_name, new_name in mainColumnMapping.items():
             #check if old name is in schema
-            if old_name in oldDataframe.columns:
-                newDataframe = newDataframe.withColumnRenamed(old_name, new_name)
-        
-        return newDataframe
+            if old_name in transactionsDataframe.columns:
+                transformedTransactionsDataframe = transformedTransactionsDataframe.withColumnRenamed(old_name, new_name)
+
+        return transformedTransactionsDataframe
     
     '''
     The method removes the nested columns in results from old data frame.
     Input:
-        oldDataframe: The dataframe whose schema needs to be changed 
+        transactionsDataframe: The dataframe whose schema needs to be changed 
         dropList: The list of nested columns inside results to be dropped
         keepList: The list of nested columns inside results to be kept
     Output:
-        newDataframe: The dataframe with the nested columns in results dropped 
+        The dataframe with the nested columns in results dropped 
     '''
-    def dropNestedColumnsInResults(oldDataframe, dropList, keepList):
+    def dropNestedColumnsInResults(transactionsDataframe, dropList, keepList):
         #check if results exists or dropList is empty
-        if "results" not in oldDataframe.columns or len(dropList) == 0:
-            return oldDataframe
+        if "results" not in transactionsDataframe.columns or len(dropList) == 0:
+            return transactionsDataframe
         
-        #build a transform expression for results    
+        #build a transform expression for results
+        #expression: "transform(array, func)"" - Transforms elements in array using the function func
         expression = "transform(results.l, x -> struct(struct("
         for nested_field in keepList:
             expression += "x.m." + nested_field + " as " + nested_field + ","
         expression = expression[:-1]+") as m))"
         
-        #apply the transform to drop the fields
-        newDataframe = oldDataframe.withColumn("results", f.struct(f.expr(expression).alias("l")))
-        
-        #return the transformed data frame
-        return newDataframe
+        #apply the transform to drop the fields and return the transformed dataframe
+        return transactionsDataframe.withColumn("results", f.struct(f.expr(expression).alias("l"))) 
 
     #Initialize logs
     logs_ = ""
-    
-    #Initialize new ipMetadataDataframe
-    ipMetadataDataframe = transactionsDataframe
     
     '''
     Remove storage attributes: The content of storageAttributes is already present in storageAttributesList, hence remove the redundancy
@@ -211,7 +179,7 @@ def transformSchema(transactionsDataframe, s3LogBucket, s3Client):
     keepList = ["storageAttributesList", "otherAttributes", "documentExchangeDetailsDO", "rawDataStorageDetailsList", "documentConsumers", "documentIdentifiers"]
     dropList = ["storageAttributes"]
     start_time = time()
-    ipMetadataDataframe = dropNestedColumnsInResults(ipMetadataDataframe, dropList, keepList)
+    transformedTransactionsDataframe1 = dropNestedColumnsInResults(ipMetadataDataframe, dropList, keepList)
     end_time = time()
     logs_ += "storageAttributes removed! Duration: " + str(end_time - start_time) + "\n"
     
@@ -219,7 +187,7 @@ def transformSchema(transactionsDataframe, s3LogBucket, s3Client):
     change workflowId schema
     '''
     start_time = time()
-    ipMetadataDataframe = changeWorkflowIdSchema(ipMetadataDataframe)
+    transformedTransactionsDataframe2 = changeWorkflowIdSchema(transformedTransactionsDataframe1)
     end_time = time()
     logs_ += "Workflow Schema changed! Duration: " + str(end_time - start_time) + "\n"
     
@@ -227,7 +195,7 @@ def transformSchema(transactionsDataframe, s3LogBucket, s3Client):
     concatenate useCaseId and version
     '''
     start_time = time()
-    ipMetadataDataframe = concatenateUseCaseIdAndVersion(ipMetadataDataframe)
+    transformedTransactionsDataframe3 = concatenateUseCaseIdAndVersion(transformedTransactionsDataframe2)
     end_time = time()
     logs_ += "useCaseId and Version concatenated! Duration: " + str(end_time - start_time) + "\n"
     
@@ -244,7 +212,7 @@ def transformSchema(transactionsDataframe, s3LogBucket, s3Client):
     resultsNestedColumnMapping['otherAttributes'] = 'documentTags'
     
     start_time = time()
-    ipMetadataDataframe = changeNestedColumnNames(ipMetadataDataframe, "results", resultsNestedColumnMapping)
+    transformedTransactionsDataframe4 = changeNestedColumnNames(transformedTransactionsDataframe3, "results", resultsNestedColumnMapping)
     end_time = time()
     logs_ += "Results schema change! Duration: " + str(end_time - start_time) + "\n"
     
@@ -262,13 +230,13 @@ def transformSchema(transactionsDataframe, s3LogBucket, s3Client):
     mainColumnMapping["results"] = "DocumentMetadataList"
     
     start_time = time()
-    ipMetadataDataframe = changeMainColumnNames(ipMetadataDataframe, mainColumnMapping)
+    ipMetadataDataframe = changeMainColumnNames(transformedTransactionsDataframe4, mainColumnMapping)
     end_time = time()
     logs_ += "Main Field names changed! Duration: " + str(end_time - start_time) + "\n"
     
-    #write transformation logs in s3LogBucket to file _TransformationLogs_
+    #write transformation logs in s3LogBucket to file with key: transactions-ipmetadata-transformed-schema-logs/_TransformationLogs_
     try:
-        s3Client.Object(s3LogBucket, "_TransformationLogs_").put(Body = logs_)
+        s3Client.Object(s3LogBucket, "transactions-ipmetadata-transformed-schema-logs/_TransformationLogs_").put(Body = logs_)
     except:
         pass
     
@@ -297,16 +265,16 @@ def writeData(ipMetadataDataframe, s3WritePath, s3LogBucket, s3Client):
     except Exception as e:
         logs_ += "Write Failed!\n" + str(e) + "\n"
     
-    #write logs in s3LogBucket to file _WriteLogs_
+    #write logs in s3LogBucket to file with key: transactions-ipmetadata-transformed-schema-logs/_WriteLogs_
     try:
-        s3Client.Object(s3LogBucket, "_WriteLogs_").put(Body = logs_)
+        s3Client.Object(s3LogBucket, "transactions-ipmetadata-transformed-schema-logs/_WriteLogs_").put(Body = logs_)
     except:
         pass
 
 #Build s3 client for logging
 s3Client = boto3.resource("s3")
 #Specify the s3 log bucket for logging of read, transform and write success
-s3LogBucket = "script-logs-etl"
+s3LogBucket = "internship-project-one"
 
 '''
 EXTRACT DATA:
@@ -314,9 +282,9 @@ EXTRACT DATA:
     The parameters glueDatabase and glueTable need to be specified before executing the job
 '''
 
-glueDatabase = "transactions-db"
-glueTable = "2020_05_28_16_08_00"
-transactionsDataframe = readData(glueDatabase, glueTable, s3LogBucket, s3Client)
+glueDatabase = "internship-project-one-database"
+glueTable = "2020_06_23_08_19_12"
+transactionsDataframe = readData(glueDatabase, glueTable)
 
 '''
 TRANSFORM DATA:
@@ -331,5 +299,5 @@ ipMetadataDataframe = transformSchema(transactionsDataframe, s3LogBucket, s3Clie
     The parameter s3WritePath needs to be specified before executing the job
 '''
 
-s3WritePath = "s3://ip-metadata-bucket-demo/"
+s3WritePath = "s3://internship-project-one/"
 writeData(ipMetadataDataframe, s3WritePath, s3LogBucket, s3Client)
