@@ -30,7 +30,7 @@ Input:
     glueDatabase: The resource specifying the logical tables in AWS Glue
     glueTable: The resource specifying the tabular data in the AWS Glue data catalog
 Output:
-    transactionsDataframe: PySpark dataframe containing transactions data
+    PySpark dataframe containing transactions data
 '''
 def readData(glueDatabase, glueTable):
     
@@ -40,7 +40,7 @@ def readData(glueDatabase, glueTable):
         #Convert glue dynamic frame to spark data frame to use standard pyspark functions
         return glueDynamicFrame.toDF()
     except Exception as e:
-        #Log read failure to cloudwatch management console. Visibile in logs of AWS glue on console.
+        #Log read failure to cloudwatch management console. Visibile in AWS glue console.
         print("=======Read Failed=======\n" + str(e))
         #Terminate program
         sys.exit()
@@ -134,7 +134,7 @@ def transformSchema(transactionsDataframe):
         
         #iterate over the mapping and change the old field names to new field names
         for transactionsOuterColumnName, ipMetadataOuterColumnName in outerColumnMapping.items():
-            #check if old name is in schema
+            #check if transactions outer column name is in schema
             if transactionsOuterColumnName in transactionsDataframe.columns:
                 transactionsDataframe = transactionsDataframe.withColumnRenamed(transactionsOuterColumnName, ipMetadataOuterColumnName)
 
@@ -231,10 +231,9 @@ def transformSchema(transactionsDataframe):
     end_time = time()
     logs_ += "Outer column names changed! Duration: " + str(end_time - start_time) + "\n"
     
-    #write transformation 
+    #write transformation logs to cloudwatch management console. Visible in AWS Glue console.
     print("======Transformation Logs======\n" + logs_)
-    print("hello1")
-    print(time())
+    
     #return the transformed dataframe
     return transactionsDataframe
 
@@ -246,13 +245,11 @@ Input:
 '''
 def writeData(ipMetadataDataframe, s3WritePath):
     
-    print("hello")
-    print(time())
     #Initialize logs
     logs_ = ""
     
     try:
-        #write the dataframe
+        #write the dataframe to s3 location specified by s3WritePath
         start_time = time()
         ipMetadataDataframe.write.mode("append").json(s3WritePath)
         end_time = time()
@@ -260,7 +257,7 @@ def writeData(ipMetadataDataframe, s3WritePath):
     except Exception as e:
         logs_ += "Write Failed!\n" + str(e) + "\n"
     
-    #write logs
+    #write logs to cloudwatch management console. Visibile in AWS glue console.
     print("=====Write Logs=====\n" + str(logs_))
 
 '''
