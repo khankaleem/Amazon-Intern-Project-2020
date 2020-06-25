@@ -19,9 +19,8 @@ from awsglue.context import GlueContext
 from awsglue.dynamicframe import DynamicFrame
 
 #Initialize Glue context
-spark_context = SparkContext.getOrCreate()
-glue_context = GlueContext(spark_context)
-
+sparkContext = SparkContext.getOrCreate()
+glueContext = GlueContext(sparkContext)
 
 '''
 The method reads transactions data from the glue table in glue database, into a glue dynamic frame.
@@ -36,7 +35,7 @@ def readData(glueDatabase, glueTable):
     
     try:
         #Read data into Glue dynamic frame
-        glueDynamicFrame = glue_context.create_dynamic_frame.from_catalog(database = glueDatabase, table_name = glueTable)
+        glueDynamicFrame = glueContext.create_dynamic_frame.from_catalog(database = glueDatabase, table_name = glueTable)
         #Convert glue dynamic frame to spark data frame to use standard pyspark functions
         return glueDynamicFrame.toDF()
     except Exception as e:
@@ -53,7 +52,7 @@ Output:
     ipMetadataDataframe: Transformed transactions dataframe
 '''
 def transformSchema(transactionsDataframe):
-        
+
     '''
     The method returns the schema of a main column in the form of a string.
     Input:
@@ -164,8 +163,29 @@ def transformSchema(transactionsDataframe):
         #apply the transform to drop the fields and return the transformed dataframe
         return transactionsDataframe.withColumn("results", f.struct(f.expr(expression).alias("l")))
 
+    '''
+    The method retains only the rows in the transactions dataframe where state is COMPLETE
+    Input:
+        transactionsDataframe: The dataframe whose schema needs to be changed
+    Output:
+        The dataframe with only those rows having state as COMPLETE
+    '''
+    def retainRowsWithStateAsComplete(transactionsDataframe):
+        if "state" not in transactionsDataframe.columns:
+            return
+        #filter the dataframe
+        return transactionsDataframe.filter('state IS NOT NULL and state.s == "COMPLETE"')
+        
     #Initialize logs
     logs_ = ""
+    
+    '''
+    Retain only the rows with state as Complete
+    '''
+    start_time = time()
+    transactionsDataframe = retainRowsWithStateAsComplete(transactionsDataframe)
+    end_time = time()
+    logs_ += "Rows with state as Complete retained! Duration: " + str(end_time - start_time) + "\n"
     
     '''
     Remove storage attributes: The content of storageAttributes is already present in storageAttributesList, hence remove the redundancy
