@@ -201,11 +201,9 @@ Mappers = data/blocksize
 Week 7
 Worked on code comments from phase 2.
 change variable names, function working, commented everything.
-
-
-
-
-
+Wrote method to drop rows from dataframe in phase 1 having state as COMPLETE.
+Blocker regarding getting one consolidated report for data completeness and integrity check was fixed.
+Researched on the number of dpu required for transformation of 1TB of data in AWS Glue. 
 
 
 
