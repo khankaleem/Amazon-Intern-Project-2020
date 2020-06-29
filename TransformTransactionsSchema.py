@@ -87,10 +87,10 @@ def transformSchema(transactionsDataframe):
     Input:
         transactionsDataframe: The dataframe whose schema needs to be changed
     Output:
-        The dataframe with useCaseId and version concatenated by the literal ":"
+        The dataframe with useCaseId appended by the literal ":1"
     '''
-    def concatenateUseCaseIdAndVersion(transactionsDataframe):
-        return transactionsDataframe.withColumn("useCaseId", f.struct(f.concat(f.col("useCaseId.s"), f.lit(":"), f.col("version.n")).alias("s")))
+    def changeUseCaseIdAndVersion(transactionsDataframe):
+        return transactionsDataframe.withColumn("useCaseId", f.struct(f.concat(f.col("useCaseId.s"), f.lit(":1")).alias("s")))
         
     '''
     The method changes names of the nested columns of a main column in the transactions dataframe.
@@ -199,7 +199,7 @@ def transformSchema(transactionsDataframe):
     '''
     concatenate useCaseId and version
     '''
-    transactionsDataframe = concatenateUseCaseIdAndVersion(transactionsDataframe)
+    transactionsDataframe = changeUseCaseIdAndVersion(transactionsDataframe)
     
     '''
     resultsMapping contains mapping of old schema nested fields to new schema nested fields in results.
