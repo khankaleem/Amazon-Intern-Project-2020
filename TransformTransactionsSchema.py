@@ -175,17 +175,11 @@ def transformSchema(transactionsDataframe):
             return
         #filter the dataframe
         return transactionsDataframe.filter('state IS NOT NULL and state.s == "COMPLETE"')
-        
-    #Initialize logs
-    logs_ = ""
-    
+
     '''
     Retain only the rows with state as Complete
     '''
-    start_time = time()
     transactionsDataframe = retainRowsWithStateAsComplete(transactionsDataframe)
-    end_time = time()
-    logs_ += "Rows with state as Complete retained! Duration: " + str(end_time - start_time) + "\n"
     
     '''
     Remove storage attributes: The content of storageAttributes is already present in storageAttributesList, hence remove the redundancy
@@ -195,26 +189,17 @@ def transformSchema(transactionsDataframe):
     '''
     keepList = ["storageAttributesList", "otherAttributes", "documentExchangeDetailsDO", "rawDataStorageDetailsList", "documentConsumers", "documentIdentifiers"]
     dropList = ["storageAttributes"]
-    start_time = time()
     transactionsDataframe = dropNestedColumnsInResults(transactionsDataframe, dropList, keepList)
-    end_time = time()
-    logs_ += "storageAttributes removed! Duration: " + str(end_time - start_time) + "\n"
     
     '''
     change workflowId schema
     '''
-    start_time = time()
     transactionsDataframe = changeWorkflowIdSchema(transactionsDataframe)
-    end_time = time()
-    logs_ += "Workflow Schema changed! Duration: " + str(end_time - start_time) + "\n"
     
     '''
     concatenate useCaseId and version
     '''
-    start_time = time()
     transactionsDataframe = concatenateUseCaseIdAndVersion(transactionsDataframe)
-    end_time = time()
-    logs_ += "useCaseId and Version concatenated! Duration: " + str(end_time - start_time) + "\n"
     
     '''
     resultsMapping contains mapping of old schema nested fields to new schema nested fields in results.
@@ -228,10 +213,7 @@ def transformSchema(transactionsDataframe):
     resultsNestedColumnMapping['storageAttributesList'] = 'generatedDocumentDetailsList'
     resultsNestedColumnMapping['otherAttributes'] = 'documentTags'
     
-    start_time = time()
     transactionsDataframe = changeNestedColumnNames(transactionsDataframe, "results", resultsNestedColumnMapping)
-    end_time = time()
-    logs_ += "Results schema changed! Duration: " + str(end_time - start_time) + "\n"
     
     '''
     mainFieldMapping contains mapping of old schema main fields to new schema main fields.
@@ -246,13 +228,7 @@ def transformSchema(transactionsDataframe):
     outerColumnMapping["useCaseId"] = "UsecaseIdAndVersion"
     outerColumnMapping["results"] = "DocumentMetadataList"
     
-    start_time = time()
     transactionsDataframe = changeOuterColumnNames(transactionsDataframe, outerColumnMapping)
-    end_time = time()
-    logs_ += "Outer column names changed! Duration: " + str(end_time - start_time) + "\n"
-    
-    #write transformation logs to cloudwatch management console. Visible in AWS Glue console.
-    print("======Transformation Logs======\n" + logs_)
     
     #return the transformed dataframe
     return transactionsDataframe
