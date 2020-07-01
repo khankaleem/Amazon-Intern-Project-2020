@@ -54,20 +54,6 @@ Output:
 def transformSchema(transactionsDataframe):
 
     '''
-    The method returns the schema of a main column in the form of a string.
-    Input:
-        mainColumnName: the name of the main column
-        dataframe: the data frame containing the main column
-    Ouput: 
-        The main column schema in the form of a string
-    '''
-    def getSchema(mainColumnName, dataframe):
-        #get the column schema in the form of string
-        schema = dataframe.select(mainColumnName).schema.simpleString()
-        startId = len("struct<" + mainColumnName + ":")
-        return schema[startId:-1]
-        
-    '''
     The method changes the workflowId schema.
     Input:
         transactionsDataframe: The dataframe whose schema needs to be changed
@@ -75,7 +61,6 @@ def transformSchema(transactionsDataframe):
         The dataframe with key generateInvoiceGraph added to workflowId schema
     '''
     def changeWorkflowIdSchema(transactionsDataframe):
-        
         #check if workflowId column is in the schema
         if "workflowId" in transactionsDataframe.columns:
             return transactionsDataframe.withColumn("workflowId", f.when(f.col("workflowId").isNotNull(), f.struct(f.struct(f.struct(f.col("workflowId.m")).alias("generateInvoiceGraph")).alias("m"))).otherwise(f.lit(None)))
@@ -83,43 +68,14 @@ def transformSchema(transactionsDataframe):
             return transactionsDataframe
     
     '''
-    The method concatenates useCaseId and version.
+    The method changes useCaseId schema.
     Input:
         transactionsDataframe: The dataframe whose schema needs to be changed
     Output:
         The dataframe with useCaseId appended by the literal ":1"
     '''
-    def changeUseCaseIdAndVersion(transactionsDataframe):
+    def changeUseCaseIdSchema(transactionsDataframe):
         return transactionsDataframe.withColumn("useCaseId", f.struct(f.concat(f.col("useCaseId.s"), f.lit(":1")).alias("s")))
-        
-    '''
-    The method changes names of the nested columns of a main column in the transactions dataframe.
-    Input: 
-        columnName: the name of the main column
-        transactionsDataframe: the data frame containing the main column
-        nestedColumnMapping: The mapping of the names of the nested fields inside the main column
-    Output:
-        The dataframe with nested columns of the main column renamed
-    '''
-    def changeNestedColumnNames(transactionsDataframe, columnName, nestedColumnMapping):
-        #check if column exists in the schema
-        if columnName not in transactionsDataframe.columns:
-            return transactionsDataframe
-        
-        #get column schema in the form of string
-        column_schema = getSchema(columnName, transactionsDataframe)
-        
-        #iterate over the mapping and change the old field names to new field names
-        for transactionsNestedColumnName, ipMetadataNestedColumnName in nestedColumnMapping.items():
-            if transactionsNestedColumnName in column_schema:
-                column_schema = column_schema.replace(transactionsNestedColumnName, ipMetadataNestedColumnName)
-        
-        #null cannot be casted to null, so change the null mentions in the schema to string
-        if "null" in column_schema:
-            column_schema = column_schema.replace("null", "string")
-        
-        #cast the old schema to new schema
-        return transactionsDataframe.withColumn(columnName, f.col(columnName).cast(column_schema))
     
     '''
     The method changes the outer column names in the transactions dataframe.
@@ -130,39 +86,58 @@ def transformSchema(transactionsDataframe):
         The dataframe with the outer columns renamed
     '''
     def changeOuterColumnNames(transactionsDataframe, outerColumnMapping):
-        
         #iterate over the mapping and change the old field names to new field names
         for transactionsOuterColumnName, ipMetadataOuterColumnName in outerColumnMapping.items():
             #check if transactions outer column name is in schema
             if transactionsOuterColumnName in transactionsDataframe.columns:
                 transactionsDataframe = transactionsDataframe.withColumnRenamed(transactionsOuterColumnName, ipMetadataOuterColumnName)
-
         return transactionsDataframe
     
     '''
-    The method removes the nested columns in results specified in dropList, from transactions dataframe.
+    The method drops the storageAttributes column in results. 
+    Also the schema of storageAttributesList is changed.
+    Also the names of nested columns in results are changed.
     Input:
-        transactionsDataframe: The dataframe whose schema needs to be changed 
-        dropList: The list of nested columns inside results to be dropped
-        keepList: The list of nested columns inside results to be kept
+        transactionsDataframe: The dataframe whose schema needs to be changed
     Output:
-        The dataframe with the nested columns in results dropped 
+        The transformed dataframe
     '''
-    def dropNestedColumnsInResults(transactionsDataframe, dropList, keepList):
-        #check if results exists or dropList is empty
-        if "results" not in transactionsDataframe.columns or len(dropList) == 0:
+    def changeResultsColumnSchema(transactionsDataframe):
+        #check if results exists
+        if "results" not in transactionsDataframe.columns:
             return transactionsDataframe
         
         #build a transform expression for results
-        #expression: "transform(array, func)"" - Transforms elements in array using the function func
-        expression = "transform(results.l, x -> struct(struct("
-        for nested_field in keepList:
-            expression += "x.m." + nested_field + " as " + nested_field + ","
-        expression = expression[:-1]+") as m))"
+        #expression: "transform(array, func)" - Transforms each element in array using the function func and returns the transformed array
+        expression = 'struct(transform(results.l, x -> struct( \
+                                                                struct( \
+                                                                        struct(transform(x.m.storageAttributesList.l, \
+                                                                                            x -> struct(struct(struct(struct( \
+                                                                                                    x.m.retentionPeriodInDays as retentionPeriodInDays, \
+                                                                                                    x.m.storageTypeSpecificAttributes.m.DOCUMENT_DOMAIN as DOCUMENT_DOMAIN, \
+                                                                                                    x.m.storageTypeSpecificAttributes.m.CUSTOMER_ID as CUSTOMER_ID, \
+                                                                                                    x.m.storageTypeSpecificAttributes.m.DOCUMENT_ID as DOCUMENT_ID, \
+                                                                                                    x.m.storageTypeSpecificAttributes.m.DOCUMENT_CLASS_ID as DOCUMENT_CLASS_ID, \
+                                                                                                    x.m.storageTypeSpecificAttributes.m.LEGAccountId as LEGAccountId, \
+                                                                                                    x.m.storageTypeSpecificAttributes.m.PurchasingGroupId as PurchasingGroupId, \
+                                                                                                    x.m.storageTypeSpecificAttributes.m.PRINCIPAL_ID as PRINCIPAL_ID, \
+                                                                                                    x.m.storageTypeSpecificAttributes.m.DOCUMENT_VERSION_ID as DOCUMENT_VERSION_ID, \
+                                                                                                    x.m.storageTypeSpecificAttributes.m.MIME_TYPE as MIME_TYPE, \
+                                                                                                    x.m.storageType as storageType, \
+                                                                                                    x.m.storageDate as storageDate) as m) as invoiceStoreAttributes) as m)) as l) \
+                                                                                            as generatedDocumentDetailsList, \
+                                                                        x.m.otherAttributes as documentTags, \
+                                                                        x.m.documentExchangeDetailsDO as documentExchangeDetailsList, \
+                                                                        x.m.rawDataStorageDetailsList as rawDocumentDetailsList, \
+                                                                        x.m.documentConsumers as documentConsumerList, \
+                                                                        x.m.documentIdentifiers as documentIdentifierList \
+                                                                      ) as m \
+                                                             ) \
+                                     ) as l \
+                            )'
+        #return the transformed dataframe
+        return transactionsDataframe.withColumn("results", f.expr(expression))
         
-        #apply the transform to drop the fields and return the transformed dataframe
-        return transactionsDataframe.withColumn("results", f.struct(f.expr(expression).alias("l")))
-
     '''
     The method retains only the rows in the transactions dataframe where state is COMPLETE
     Input:
@@ -182,14 +157,11 @@ def transformSchema(transactionsDataframe):
     transactionsDataframe = retainRowsWithStateAsComplete(transactionsDataframe)
     
     '''
-    Remove storage attributes: The content of storageAttributes is already present in storageAttributesList, hence remove the redundancy
-    dropList contains nested columns inside results that need to be dropped
-    keepList contains nested columns inside results that need to be retained
-    Change the keepList and dropList as per the usecase
+    Drop storage attributes
+    Change schema of storageAttributesList
+    Change Nested column names in results
     '''
-    keepList = ["storageAttributesList", "otherAttributes", "documentExchangeDetailsDO", "rawDataStorageDetailsList", "documentConsumers", "documentIdentifiers"]
-    dropList = ["storageAttributes"]
-    transactionsDataframe = dropNestedColumnsInResults(transactionsDataframe, dropList, keepList)
+    transactionsDataframe = changeResultsColumnSchema(transactionsDataframe)
     
     '''
     change workflowId schema
@@ -199,22 +171,8 @@ def transformSchema(transactionsDataframe):
     '''
     concatenate useCaseId and version
     '''
-    transactionsDataframe = changeUseCaseIdAndVersion(transactionsDataframe)
-    
-    '''
-    resultsMapping contains mapping of old schema nested fields to new schema nested fields in results.
-    Change the mapping as per the usecase.
-    '''
-    resultsNestedColumnMapping = {}
-    resultsNestedColumnMapping['documentExchangeDetailsDO'] = 'documentExchangeDetailsList'
-    resultsNestedColumnMapping['rawDataStorageDetailsList'] = 'rawDocumentDetailsList'
-    resultsNestedColumnMapping['documentConsumers'] = 'documentConsumerList'
-    resultsNestedColumnMapping['documentIdentifiers'] = 'documentIdentifierList'
-    resultsNestedColumnMapping['storageAttributesList'] = 'generatedDocumentDetailsList'
-    resultsNestedColumnMapping['otherAttributes'] = 'documentTags'
-    
-    transactionsDataframe = changeNestedColumnNames(transactionsDataframe, "results", resultsNestedColumnMapping)
-    
+    transactionsDataframe = changeUseCaseIdSchema(transactionsDataframe)
+
     '''
     mainFieldMapping contains mapping of old schema main fields to new schema main fields.
     Change the mapping as per the usecase.
@@ -227,7 +185,6 @@ def transformSchema(transactionsDataframe):
     outerColumnMapping["lastUpdatedDate"] = "LastUpdatedTime"
     outerColumnMapping["useCaseId"] = "UsecaseIdAndVersion"
     outerColumnMapping["results"] = "DocumentMetadataList"
-    
     transactionsDataframe = changeOuterColumnNames(transactionsDataframe, outerColumnMapping)
     
     #return the transformed dataframe
@@ -262,15 +219,14 @@ EXTRACT DATA:
     The parameters glueDatabase and glueTable need to be specified before executing the job
 '''
 
-glueDatabase = "internship-project-one-database"
-glueTable = "2020_06_23_08_19_12"
+glueDatabase = "2020_06_23_08_19_12"
+glueTable = "internship-project-one-database"
 transactionsDataframe = readData(glueDatabase, glueTable)
 
 '''
 TRANSFORM DATA:
     Transform the transactionsDataframe
 '''
-
 ipMetadataDataframe = transformSchema(transactionsDataframe)
 
 '''
