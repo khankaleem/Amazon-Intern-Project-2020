@@ -104,33 +104,39 @@ def transformSchema(transactionsDataframe):
     '''
     def changeResultsColumnSchema(transactionsDataframe, nestedColumnMappingInResults):
         '''
-        The functions returns all the possible paths in a schema, in a list format. All paths are returned by applying Depth First Search on the schema
-        For. example: one of the entries in the list could be ['results.l', 'm.storageAttributesList.l', 'm.retentionPeriodInDays.n']
-                      signifying a path from results to retentionPeriodInDays
+        The functions returns all the possible paths in a schema, in a list format. 
+        All paths are returned by applying Depth First Search on the schema tree.
+        For e.g. some of the entries in the paths list could be:
+                            ['results.l', 'm.storageAttributesList.l', 'm.retentionPeriodInDays.n']
+                            ['results.l', 'm.documentIdentifiers.l', 'm.source.s']
+                            ['results.l', 'm.storageAttributesList.l', 'm.storageTypeSpecificAttributes.m.MIME_TYPE.s']
+                      The path is broken whenever an array type column is encountered as seen in the above example.
         Input:
             schema: The schema to be traversed
             fieldName: The fieldName of the schema
         Output:
             The list of paths in the schema
         '''
-        def getPaths(schema, fieldName = ""):
+        def getAllPathsInSchema(schema, fieldName = ""):
+            #initailize paths list which will store all paths in schema
             paths = []
             #schema is of structType
             if isinstance(schema, StructType):
                 if len(schema.fields) == 0:
-                    return [["{}".format(fieldName)]]
+                    return [[fieldName]]
+                #get paths from all struct fields in struct type
                 for field in schema.fields:
-                    for child in getPaths(field.dataType, field.name):
-                        wrappedChild = ["{prefix}{suffix}".format(prefix=("" if fieldName == "" else "{}.".format(fieldName)), suffix=child[0])] + child[1:]
-                        paths.append(wrappedChild)
+                    for child in getAllPathsInSchema(field.dataType, field.name):
+                        paths.append([("" if fieldName == "" else fieldName + ".") + child[0]] + child[1:])
             #schema is of ArrayType
             elif isinstance(schema, ArrayType):
-                for child in getPaths(schema.elementType):
-                    wrappedChild = ["{}".format(fieldName)] + child
-                    paths.append(wrappedChild)
+                for child in getAllPathsInSchema(schema.elementType):
+                    paths.append([fieldName] + child)
             #schema is string, number etc.
             else:
-                return [["{}".format(fieldName)]]
+                return [[fieldName]]
+                
+            #return all possible paths
             return paths
     
         #check if results exists
@@ -138,7 +144,7 @@ def transformSchema(transactionsDataframe):
             return transactionsDataframe
         
         #get all possible paths to columns in dataframe
-        paths = getPaths(transactionsDataframe.select("results").schema)
+        paths = getAllPathsInSchema(transactionsDataframe.select("results").schema)
         #check results list is empty in dataframe
         if len(paths) == 1 and len(paths[0]) == 2 and paths[0][1] == '':
             return transactionsDataframe
@@ -181,7 +187,6 @@ def transformSchema(transactionsDataframe):
 
         #return dataframe with transformed results column
         return transactionsDataframe.withColumn("results", f.expr(transformExpression))
-
         
     '''
     The method retains only the rows in the transactions dataframe where state is COMPLETE
@@ -275,11 +280,13 @@ EXTRACT DATA:
 glueDatabase = "internship-project-one-database"
 glueTable = "2020_06_23_08_19_12"
 transactionsDataframe = readData(glueDatabase, glueTable)
+transactionsDataframe.printSchema()
 '''
 TRANSFORM DATA:
     Transform the transactionsDataframe
 '''
 ipMetadataDataframe = transformSchema(transactionsDataframe)
+ipMetadataDataframe.printSchema()
 '''
 #LOAD DATA
     load ipMetadataDataframe to s3.
