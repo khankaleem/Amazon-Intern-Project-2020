@@ -12,7 +12,7 @@ from time import time
 #Import PySpark modules
 from pyspark.context import SparkContext
 import pyspark.sql.functions as f
-from pyspark.sql.types import StructType, ArrayType, NullType
+from pyspark.sql.types import StructType, ArrayType
 
 #Import Glue modules
 from awsglue.context import GlueContext
@@ -103,18 +103,15 @@ def transformSchema(transactionsDataframe):
         The transformed dataframe
     '''
     def changeResultsColumnSchema(transactionsDataframe, nestedColumnMappingInResults):
-        #check if results exists
-        if "results" not in transactionsDataframe.columns:
-            return transactionsDataframe
-        
-        
         '''
         The functions returns all the possible paths in a schema, in a list format. All paths are returned by applying Depth First Search on the schema
-        For. example: one of the entries in the list would be ['results.l', 'm.storageAttributesList.l', 'm.retentionPeriodInDays.n']
+        For. example: one of the entries in the list could be ['results.l', 'm.storageAttributesList.l', 'm.retentionPeriodInDays.n']
                       signifying a path from results to retentionPeriodInDays
         Input:
             schema: The schema to be traversed
             fieldName: The fieldName of the schema
+        Output:
+            The list of paths in the schema
         '''
         def getPaths(schema, fieldName = ""):
             paths = []
@@ -124,8 +121,8 @@ def transformSchema(transactionsDataframe):
                     return [["{}".format(fieldName)]]
                 for field in schema.fields:
                     for child in getPaths(field.dataType, field.name):
-                        wrappedChild = ["{prefix}{suffix}".format(prefix=("" if name == "" else "{}.".format(fieldName)), suffix=child[0])] + child[1:]
-                        paths.append(wrapped_child)
+                        wrappedChild = ["{prefix}{suffix}".format(prefix=("" if fieldName == "" else "{}.".format(fieldName)), suffix=child[0])] + child[1:]
+                        paths.append(wrappedChild)
             #schema is of ArrayType
             elif isinstance(schema, ArrayType):
                 for child in getPaths(schema.elementType):
@@ -133,44 +130,58 @@ def transformSchema(transactionsDataframe):
                     paths.append(wrappedChild)
             #schema is string, number etc.
             else:
-                return [["{}".format(name)]]
+                return [["{}".format(fieldName)]]
             return paths
+    
+        #check if results exists
+        if "results" not in transactionsDataframe.columns:
+            return transactionsDataframe
         
-        #initialize transformaion loginc for results column
-        transformationLogicOfNestedColumnsInResults = set()
-        #get all possible paths in schema
+        #get all possible paths to columns in dataframe
         paths = getPaths(transactionsDataframe.select("results").schema)
+        #check results list is empty in dataframe
+        if len(paths) == 1 and len(paths[0]) == 2 and paths[0][1] == '':
+            return transactionsDataframe
         
-        #build transformation for storageAttriibutesList
+        #initialize set for storage of transformation logic of nested columns in results
+        transformationLogicOfNestedColumnsInResults = set()
+        
+        #build transformation logic for storageAttributesList
         transformationLogicOfStorageAttributesList = ''
         for path in paths:
-            print(path)
             if "m.storageAttributesList.l" in path:
-                tempSplit = path[2].split('.')
-                transformationLogicOfStorageAttributesList += 'x.' + '.'.join(tempSplit[:-1]) + ' as ' + tempSplit[-2] + ','
-        
+                #check if list is empty
+                if path[2] == '':
+                    transformationLogicOfNestedColumnsInResults.add('x.m.storageAttributesList as generatedDocumentDetailsList')
+                    break
+                #build denest expression for columns in storageAttributesList
+                else:
+                    helperList = path[2].split('.')
+                    transformationLogicOfStorageAttributesList += 'x.' + '.'.join(helperList[:-1]) + ' as ' + helperList[-2] + ','
+                    
         if transformationLogicOfStorageAttributesList != '':
             transformationLogicOfStorageAttributesList = 'struct(transform(x.m.storageAttributesList.l, \
                                                                                 x -> struct(struct(struct(struct(' + \
                                                                                       transformationLogicOfStorageAttributesList[:-1] + \
                                                                                      ') as m) as invoiceStoreAttributes) as m)) as l) as generatedDocumentDetailsList'
             transformationLogicOfNestedColumnsInResults.add(transformationLogicOfStorageAttributesList)
-            
+        
+        #build transform expression for remaining columns
         for path in paths:
             helperList = path[1].split('.')
-            if 'storageAttributes' not in helperList and 'storageAttributesList' not in helperList: 
+            if "storageAttributes" not in helperList and "storageAttributesList" not in helperList:
                 transformationLogic = 'x.' + helperList[0] + '.' + helperList[1] + ' as ' + nestedColumnMappingInResults[helperList[1]]
                 transformationLogicOfNestedColumnsInResults.add(transformationLogic)
         
-        expression = ''
+        #build transform expression for results column
+        transformExpression = ''
         for transformationLogic in transformationLogicOfNestedColumnsInResults:
-            expression += transformationLogic + ','
-        
-        if expression != '':
-            expression = 'struct(transform(results.l, x -> struct(struct(' + expression[:-1] + ') as m )) as l)'
-            return transactionsDataframe.withColumn("results", f.expr(expression))
-            
-        return transactionsDataframe
+            transformExpression += transformationLogic + ','
+        transformExpression = 'struct(transform(results.l, x -> struct(struct(' + transformExpression[:-1] + ') as m )) as l)'
+
+        #return dataframe with transformed results column
+        return transactionsDataframe.withColumn("results", f.expr(transformExpression))
+
         
     '''
     The method retains only the rows in the transactions dataframe where state is COMPLETE
@@ -264,19 +275,16 @@ EXTRACT DATA:
 glueDatabase = "internship-project-one-database"
 glueTable = "2020_06_23_08_19_12"
 transactionsDataframe = readData(glueDatabase, glueTable)
-transactionsDataframe.printSchema()
 '''
 TRANSFORM DATA:
     Transform the transactionsDataframe
 '''
 ipMetadataDataframe = transformSchema(transactionsDataframe)
-ipMetadataDataframe.printSchema()
-print(ipMetadataDataframe.schema)
 '''
 #LOAD DATA
     load ipMetadataDataframe to s3.
     The parameter s3WritePath needs to be specified before executing the job
 '''
 
-#s3WritePath = "s3://internship-project-one/"
-#writeData(ipMetadataDataframe, s3WritePath)
+s3WritePath = "s3://internship-project-one/"
+writeData(ipMetadataDataframe, s3WritePath)
