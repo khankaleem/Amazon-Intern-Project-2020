@@ -4,7 +4,6 @@ Method for reading: readData
 Method for tranforming schema: tranformSchema
 Method for writing: writeData
 '''
-
 #Import Python modules
 import sys
 import boto3
@@ -13,6 +12,7 @@ from time import time
 #Import PySpark modules
 from pyspark.context import SparkContext
 import pyspark.sql.functions as f
+from pyspark.sql.types import StructType, ArrayType, NullType
 
 #Import Glue modules
 from awsglue.context import GlueContext
@@ -102,41 +102,75 @@ def transformSchema(transactionsDataframe):
     Output:
         The transformed dataframe
     '''
-    def changeResultsColumnSchema(transactionsDataframe):
+    def changeResultsColumnSchema(transactionsDataframe, nestedColumnMappingInResults):
         #check if results exists
         if "results" not in transactionsDataframe.columns:
             return transactionsDataframe
         
-        #build a transform expression for results
-        #expression: "transform(array, func)" - Transforms each element in array using the function func and returns the transformed array
-        expression = 'struct(transform(results.l, x -> struct( \
-                                                                struct( \
-                                                                        struct(transform(x.m.storageAttributesList.l, \
-                                                                                            x -> struct(struct(struct(struct( \
-                                                                                                    x.m.retentionPeriodInDays as retentionPeriodInDays, \
-                                                                                                    x.m.storageTypeSpecificAttributes.m.DOCUMENT_DOMAIN as DOCUMENT_DOMAIN, \
-                                                                                                    x.m.storageTypeSpecificAttributes.m.CUSTOMER_ID as CUSTOMER_ID, \
-                                                                                                    x.m.storageTypeSpecificAttributes.m.DOCUMENT_ID as DOCUMENT_ID, \
-                                                                                                    x.m.storageTypeSpecificAttributes.m.DOCUMENT_CLASS_ID as DOCUMENT_CLASS_ID, \
-                                                                                                    x.m.storageTypeSpecificAttributes.m.LEGAccountId as LEGAccountId, \
-                                                                                                    x.m.storageTypeSpecificAttributes.m.PurchasingGroupId as PurchasingGroupId, \
-                                                                                                    x.m.storageTypeSpecificAttributes.m.PRINCIPAL_ID as PRINCIPAL_ID, \
-                                                                                                    x.m.storageTypeSpecificAttributes.m.DOCUMENT_VERSION_ID as DOCUMENT_VERSION_ID, \
-                                                                                                    x.m.storageTypeSpecificAttributes.m.MIME_TYPE as MIME_TYPE, \
-                                                                                                    x.m.storageType as storageType, \
-                                                                                                    x.m.storageDate as storageDate) as m) as invoiceStoreAttributes) as m)) as l) \
-                                                                                            as generatedDocumentDetailsList, \
-                                                                        x.m.otherAttributes as documentTags, \
-                                                                        x.m.documentExchangeDetailsDO as documentExchangeDetailsList, \
-                                                                        x.m.rawDataStorageDetailsList as rawDocumentDetailsList, \
-                                                                        x.m.documentConsumers as documentConsumerList, \
-                                                                        x.m.documentIdentifiers as documentIdentifierList \
-                                                                      ) as m \
-                                                             ) \
-                                     ) as l \
-                            )'
-        #return the transformed dataframe
-        return transactionsDataframe.withColumn("results", f.expr(expression))
+        
+        '''
+        The functions returns all the possible paths in a schema, in a list format. All paths are returned by applying Depth First Search on the schema
+        For. example: one of the entries in the list would be ['results.l', 'm.storageAttributesList.l', 'm.retentionPeriodInDays.n']
+                      signifying a path from results to retentionPeriodInDays
+        Input:
+            schema: The schema to be traversed
+            fieldName: The fieldName of the schema
+        '''
+        def getPaths(schema, fieldName = ""):
+            paths = []
+            #schema is of structType
+            if isinstance(schema, StructType):
+                if len(schema.fields) == 0:
+                    return [["{}".format(fieldName)]]
+                for field in schema.fields:
+                    for child in getPaths(field.dataType, field.name):
+                        wrappedChild = ["{prefix}{suffix}".format(prefix=("" if name == "" else "{}.".format(fieldName)), suffix=child[0])] + child[1:]
+                        paths.append(wrapped_child)
+            #schema is of ArrayType
+            elif isinstance(schema, ArrayType):
+                for child in getPaths(schema.elementType):
+                    wrappedChild = ["{}".format(fieldName)] + child
+                    paths.append(wrappedChild)
+            #schema is string, number etc.
+            else:
+                return [["{}".format(name)]]
+            return paths
+        
+        #initialize transformaion loginc for results column
+        transformationLogicOfNestedColumnsInResults = set()
+        #get all possible paths in schema
+        paths = getPaths(transactionsDataframe.select("results").schema)
+        
+        #build transformation for storageAttriibutesList
+        transformationLogicOfStorageAttributesList = ''
+        for path in paths:
+            print(path)
+            if "m.storageAttributesList.l" in path:
+                tempSplit = path[2].split('.')
+                transformationLogicOfStorageAttributesList += 'x.' + '.'.join(tempSplit[:-1]) + ' as ' + tempSplit[-2] + ','
+        
+        if transformationLogicOfStorageAttributesList != '':
+            transformationLogicOfStorageAttributesList = 'struct(transform(x.m.storageAttributesList.l, \
+                                                                                x -> struct(struct(struct(struct(' + \
+                                                                                      transformationLogicOfStorageAttributesList[:-1] + \
+                                                                                     ') as m) as invoiceStoreAttributes) as m)) as l) as generatedDocumentDetailsList'
+            transformationLogicOfNestedColumnsInResults.add(transformationLogicOfStorageAttributesList)
+            
+        for path in paths:
+            helperList = path[1].split('.')
+            if 'storageAttributes' not in helperList and 'storageAttributesList' not in helperList: 
+                transformationLogic = 'x.' + helperList[0] + '.' + helperList[1] + ' as ' + nestedColumnMappingInResults[helperList[1]]
+                transformationLogicOfNestedColumnsInResults.add(transformationLogic)
+        
+        expression = ''
+        for transformationLogic in transformationLogicOfNestedColumnsInResults:
+            expression += transformationLogic + ','
+        
+        if expression != '':
+            expression = 'struct(transform(results.l, x -> struct(struct(' + expression[:-1] + ') as m )) as l)'
+            return transactionsDataframe.withColumn("results", f.expr(expression))
+            
+        return transactionsDataframe
         
     '''
     The method retains only the rows in the transactions dataframe where state is COMPLETE
@@ -161,7 +195,15 @@ def transformSchema(transactionsDataframe):
     Change schema of storageAttributesList
     Change Nested column names in results
     '''
-    transactionsDataframe = changeResultsColumnSchema(transactionsDataframe)
+
+    nestedColumnMappingInResults = {}
+    nestedColumnMappingInResults['documentExchangeDetailsDO'] = 'documentExchangeDetailsList'
+    nestedColumnMappingInResults['rawDataStorageDetailsList'] = 'rawDocumentDetailsList'
+    nestedColumnMappingInResults['documentConsumers'] = 'documentConsumerList'
+    nestedColumnMappingInResults['documentIdentifiers'] = 'documentIdentifierList'
+    nestedColumnMappingInResults['storageAttributesList'] = 'generatedDocumentDetailsList'
+    nestedColumnMappingInResults['otherAttributes'] = 'documentTags'
+    transactionsDataframe = changeResultsColumnSchema(transactionsDataframe, nestedColumnMappingInResults)
     
     '''
     change workflowId schema
@@ -219,21 +261,22 @@ EXTRACT DATA:
     The parameters glueDatabase and glueTable need to be specified before executing the job
 '''
 
-glueDatabase = "2020_06_23_08_19_12"
-glueTable = "internship-project-one-database"
+glueDatabase = "internship-project-one-database"
+glueTable = "2020_06_23_08_19_12"
 transactionsDataframe = readData(glueDatabase, glueTable)
-
+transactionsDataframe.printSchema()
 '''
 TRANSFORM DATA:
     Transform the transactionsDataframe
 '''
 ipMetadataDataframe = transformSchema(transactionsDataframe)
-
+ipMetadataDataframe.printSchema()
+print(ipMetadataDataframe.schema)
 '''
 #LOAD DATA
     load ipMetadataDataframe to s3.
     The parameter s3WritePath needs to be specified before executing the job
 '''
 
-s3WritePath = "s3://internship-project-one/"
-writeData(ipMetadataDataframe, s3WritePath)
+#s3WritePath = "s3://internship-project-one/"
+#writeData(ipMetadataDataframe, s3WritePath)
