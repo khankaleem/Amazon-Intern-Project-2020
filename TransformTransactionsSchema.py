@@ -166,10 +166,12 @@ def transformSchema(transactionsDataframe):
                     transformationLogicOfStorageAttributesList += 'x.' + '.'.join(helperList[:-1]) + ' as ' + helperList[-2] + ','
                     
         if transformationLogicOfStorageAttributesList != '':
-            transformationLogicOfStorageAttributesList = 'struct(transform(x.m.storageAttributesList.l, \
+            transformationLogicOfStorageAttributesList = 'CASE WHEN x.m.storageAttributesList IS NOT NULL THEN \
+                                                                        struct(transform(x.m.storageAttributesList.l, \
                                                                                 x -> struct(struct(struct(struct(' + \
                                                                                       transformationLogicOfStorageAttributesList[:-1] + \
-                                                                                     ') as m) as invoiceStoreAttributes) as m)) as l) as generatedDocumentDetailsList'
+                                                                                     ') as m) as invoiceStoreAttributes) as m)) as l) ELSE NULL END \
+                                                           as generatedDocumentDetailsList'
             transformationLogicOfNestedColumnsInResults.add(transformationLogicOfStorageAttributesList)
         
         #build transform expression for remaining columns
@@ -277,21 +279,20 @@ EXTRACT DATA:
     The parameters glueDatabase and glueTable need to be specified before executing the job
 '''
 
-glueDatabase = "internship-project-one-database"
-glueTable = "2020_06_23_08_19_12"
+glueDatabase = "internship-project-two-database"
+glueTable = "2020_07_04_17_44_14"
 transactionsDataframe = readData(glueDatabase, glueTable)
-transactionsDataframe.printSchema()
+
 '''
 TRANSFORM DATA:
     Transform the transactionsDataframe
 '''
 ipMetadataDataframe = transformSchema(transactionsDataframe)
-ipMetadataDataframe.printSchema()
 '''
 #LOAD DATA
     load ipMetadataDataframe to s3.
     The parameter s3WritePath needs to be specified before executing the job
 '''
 
-s3WritePath = "s3://internship-project-one/"
+s3WritePath = "s3://internship-project-two/ip-metadata/"
 writeData(ipMetadataDataframe, s3WritePath)
