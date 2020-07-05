@@ -135,7 +135,6 @@ def transformSchema(transactionsDataframe):
             #schema is string, number etc.
             else:
                 return [[fieldName]]
-                
             #return all possible paths
             return paths
     
@@ -163,7 +162,8 @@ def transformSchema(transactionsDataframe):
                 #build denest expression for columns in storageAttributesList
                 else:
                     helperList = path[2].split('.')
-                    transformationLogicOfStorageAttributesList += 'x.' + '.'.join(helperList[:-1]) + ' as ' + helperList[-2] + ','
+                    if helperList[-1] != "m":
+                        transformationLogicOfStorageAttributesList += 'x.' + '.'.join(helperList[:-1]) + ' as ' + helperList[-2] + ','
                     
         if transformationLogicOfStorageAttributesList != '':
             transformationLogicOfStorageAttributesList = 'CASE WHEN x.m.storageAttributesList IS NOT NULL THEN \
@@ -288,6 +288,7 @@ TRANSFORM DATA:
     Transform the transactionsDataframe
 '''
 ipMetadataDataframe = transformSchema(transactionsDataframe)
+
 '''
 #LOAD DATA
     load ipMetadataDataframe to s3.
