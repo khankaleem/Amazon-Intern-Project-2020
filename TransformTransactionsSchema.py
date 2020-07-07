@@ -10,7 +10,7 @@ from time import time
 
 #Import PySpark modules
 from pyspark.context import SparkContext
-import pyspark.sql.functions as f
+from pyspark.sql.functions import struct, col, when, lit, concat, expr
 from pyspark.sql.types import StructType, ArrayType
 
 #Import Glue modules
@@ -63,7 +63,7 @@ def transformSchema(transactionsDataframe):
     def changeWorkflowIdSchema(transactionsDataframe):
         #check if workflowId column is in the schema
         if "workflowId" in transactionsDataframe.columns:
-            return transactionsDataframe.withColumn("workflowId", f.when(f.col("workflowId").isNotNull(), f.struct(f.struct(f.struct("workflowId.m").alias("generateInvoiceGraph")).alias("m"))).otherwise(f.lit(None)))
+            return transactionsDataframe.withColumn("workflowId", when(col("workflowId").isNotNull(), struct(struct(struct("workflowId.m").alias("generateInvoiceGraph")).alias("m"))).otherwise(lit(None)))
         else:
             return transactionsDataframe
     
@@ -75,7 +75,7 @@ def transformSchema(transactionsDataframe):
         The dataframe with useCaseId appended by the literal ":1"
     '''
     def changeUseCaseIdSchema(transactionsDataframe):
-        return transactionsDataframe.withColumn("useCaseId", f.struct(f.concat(f.col("useCaseId.s"), f.lit(":1")).alias("s")))
+        return transactionsDataframe.withColumn("useCaseId", struct(concat(col("useCaseId.s"), lit(":1")).alias("s")))
     
     '''
     The method changes the outer column names in the transactions dataframe.
@@ -192,7 +192,7 @@ def transformSchema(transactionsDataframe):
         transformExpression = 'struct(transform(results.l, x -> struct(struct(' + transformExpression[:-1] + ') as m )) as l)'
 
         #return dataframe with transformed results column
-        return transactionsDataframe.withColumn("results", f.expr(transformExpression))
+        return transactionsDataframe.withColumn("results", expr(transformExpression))
     
     '''
     Drop storage attributes
