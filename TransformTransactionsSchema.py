@@ -6,7 +6,6 @@ Method for writing: writeData
 '''
 #Import Python modules
 import sys
-import boto3
 from time import time
 
 #Import PySpark modules
@@ -24,7 +23,8 @@ glueContext = GlueContext(sparkContext)
 
 '''
 The method reads transactions data from the glue table in glue database, into a glue dynamic frame.
-Converts the glue dynamic frame to a PySpark dataframe. If reading fails program is terminated.
+Converts the glue dynamic frame to a PySpark dataframe. The rows having state as complete are filtered.
+If reading fails program is terminated.
 Input: 
     glueDatabase: The resource specifying the logical tables in AWS Glue
     glueTable: The resource specifying the tabular data in the AWS Glue data catalog
@@ -36,8 +36,8 @@ def readData(glueDatabase, glueTable):
     try:
         #Read data into Glue dynamic frame
         glueDynamicFrame = glueContext.create_dynamic_frame.from_catalog(database = glueDatabase, table_name = glueTable)
-        #Convert glue dynamic frame to spark data frame to use standard pyspark functions
-        return glueDynamicFrame.toDF()
+        #Convert glue dynamic frame to spark data frame to use standard pyspark functions and retain rows with state as complete
+        return glueDynamicFrame.toDF().filter('state.s == "COMPLETE"')
     except Exception as e:
         #Log read failure to cloudwatch management console. Visibile in AWS glue console.
         print("=======Read Failed=======\n" + str(e))
@@ -63,7 +63,7 @@ def transformSchema(transactionsDataframe):
     def changeWorkflowIdSchema(transactionsDataframe):
         #check if workflowId column is in the schema
         if "workflowId" in transactionsDataframe.columns:
-            return transactionsDataframe.withColumn("workflowId", f.when(f.col("workflowId").isNotNull(), f.struct(f.struct(f.struct(f.col("workflowId.m")).alias("generateInvoiceGraph")).alias("m"))).otherwise(f.lit(None)))
+            return transactionsDataframe.withColumn("workflowId", f.when(f.col("workflowId").isNotNull(), f.struct(f.struct(f.struct("workflowId.m").alias("generateInvoiceGraph")).alias("m"))).otherwise(f.lit(None)))
         else:
             return transactionsDataframe
     
@@ -104,37 +104,41 @@ def transformSchema(transactionsDataframe):
     '''
     def changeResultsColumnSchema(transactionsDataframe, nestedColumnMappingInResults):
         '''
-        The functions returns all the possible paths in a schema, in a list format. 
+        The functions returns the list of paths to all the nested fields in a schema. 
         All paths are returned by applying Depth First Search on the schema tree.
         For e.g. some of the entries in the paths list could be:
                             ['results.l', 'm.storageAttributesList.l', 'm.retentionPeriodInDays.n']
                             ['results.l', 'm.documentIdentifiers.l', 'm.source.s']
                             ['results.l', 'm.storageAttributesList.l', 'm.storageTypeSpecificAttributes.m.MIME_TYPE.s']
-                      The path is broken whenever an array type column is encountered as seen in the above example.
+                      A path is broken whenever an array type column is encountered as seen in the above example.
         Input:
             schema: The schema to be traversed
-            fieldName: The fieldName of the schema
+            schemaName: The alias of the schema
         Output:
             The list of paths in the schema
         '''
-        def getAllPathsInSchema(schema, fieldName = ""):
-            #initailize paths list which will store all paths in schema
+        def getAllPathsInSchema(schema, schemaName = ""):
+            #initailize paths list which will store paths to all the nested fields in schema
             paths = []
             #schema is of structType
             if isinstance(schema, StructType):
+                #no StructField inside StructType
                 if len(schema.fields) == 0:
-                    return [[fieldName]]
-                #get paths from all struct fields in struct type
+                    return [[schemaName]]
+                #get paths to nested fields from all StructFields in StructType
                 for field in schema.fields:
                     for child in getAllPathsInSchema(field.dataType, field.name):
-                        paths.append([("" if fieldName == "" else fieldName + ".") + child[0]] + child[1:])
+                        #concatenate the schemName and first entry in each path by '.' and append to paths list
+                        paths.append([("" if schemaName == "" else schemaName + ".") + child[0]] + child[1:])
             #schema is of ArrayType
             elif isinstance(schema, ArrayType):
+                #get paths to all nested fields in elementType
                 for child in getAllPathsInSchema(schema.elementType):
-                    paths.append([fieldName] + child)
-            #schema is string, number etc.
+                    #add the schemaName to each path
+                    paths.append([schemaName] + child)
+            #schema is StringType, etc.
             else:
-                return [[fieldName]]
+                return [[schemaName]]
             #return all possible paths
             return paths
     
@@ -155,11 +159,11 @@ def transformSchema(transactionsDataframe):
         transformationLogicOfStorageAttributesList = ''
         for path in paths:
             if "m.storageAttributesList.l" in path:
-                #check if list is empty
+                #check if storageAttributesList schema is empty in the dataframe
                 if path[2] == '':
                     transformationLogicOfNestedColumnsInResults.add('x.m.storageAttributesList as generatedDocumentDetailsList')
                     break
-                #build denest expression for columns in storageAttributesList
+                #build the expression for nested columns in storageAttributesList
                 else:
                     helperList = path[2].split('.')
                     if helperList[-1] != "m":
@@ -189,24 +193,6 @@ def transformSchema(transactionsDataframe):
 
         #return dataframe with transformed results column
         return transactionsDataframe.withColumn("results", f.expr(transformExpression))
-        
-    '''
-    The method retains only the rows in the transactions dataframe where state is COMPLETE
-    Input:
-        transactionsDataframe: The dataframe whose schema needs to be changed
-    Output:
-        The dataframe with only those rows having state as COMPLETE
-    '''
-    def retainRowsWithStateAsComplete(transactionsDataframe):
-        if "state" not in transactionsDataframe.columns:
-            return
-        #filter the dataframe
-        return transactionsDataframe.filter('state IS NOT NULL and state.s == "COMPLETE"')
-
-    '''
-    Retain only the rows with state as Complete
-    '''
-    transactionsDataframe = retainRowsWithStateAsComplete(transactionsDataframe)
     
     '''
     Drop storage attributes
@@ -262,7 +248,7 @@ def writeData(ipMetadataDataframe, s3WritePath):
     logs_ = ""
     
     try:
-        #write the dataframe to s3 location specified by s3WritePath
+        #write the dataframe to s3 location specified by s3WritePath. Change the mode to append/overwrite as per the usecase
         start_time = time()
         ipMetadataDataframe.write.mode("append").json(s3WritePath)
         end_time = time()
